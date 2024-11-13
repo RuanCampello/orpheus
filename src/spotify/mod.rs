@@ -9,11 +9,11 @@ use std::net::{TcpListener, TcpStream};
 use std::time::{Duration, SystemTime};
 
 pub(super) struct Client {
-    spotify: Spotify,
+    pub spotify: Spotify,
     oauth: SpotifyOAuth,
 }
 
-impl Client {
+    impl Client {
     pub fn new(spotify: Spotify, oauth: SpotifyOAuth) -> Self {
         Self { spotify, oauth }
     }
@@ -24,9 +24,7 @@ pub async fn get_token(spotify_oauth: &mut SpotifyOAuth, port: u16) -> Option<To
         Some(token) => Some(token),
         None => match redirect_to_authorize(spotify_oauth, port) {
             Ok(mut url) => {
-                let url = process_token(spotify_oauth, &mut url).await;
-                println!("URL CREATED {url:?}");
-                url
+                 process_token(spotify_oauth, &mut url).await
             }
             Err(()) => {
                 println!("Starting webserver failed. Continuing with manual authentication");

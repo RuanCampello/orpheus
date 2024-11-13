@@ -21,7 +21,7 @@ pub async fn run(tick_rate: Duration, client: Client) -> Result<(), Box<dyn std:
     let backend = CrosstermBackend::new(stdout);
     let mut terminal = Terminal::new(backend)?;
 
-    let mut app = State::new(client);
+    let mut app = State::new(client).await;
     let app_res = app.run(&mut terminal, tick_rate);
 
     disable_raw_mode()?;
