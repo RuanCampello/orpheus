@@ -1,5 +1,5 @@
 use crate::tui::components::playlist::draw_playlists_section;
-use crate::tui::components::search::draw_search_input;
+use crate::tui::components::search::{draw_search_input, draw_search_results};
 use crate::tui::state::State;
 use ratatui::layout::{Constraint, Layout};
 use ratatui::Frame;
@@ -21,5 +21,6 @@ fn draw(frame: &mut Frame, state: &mut State) {
     .areas(remaining_area);
 
     draw_search_input(frame, state, search);
+    draw_search_results(frame, state, main_area);
     draw_playlists_section(frame, state, playlist_area);
 }

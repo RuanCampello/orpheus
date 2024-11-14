@@ -1,12 +1,12 @@
 use ratatui::crossterm::event::KeyCode;
 use rspotify::model::album::SimplifiedAlbum;
-use rspotify::model::artist::SimplifiedArtist;
+use rspotify::model::artist::FullArtist;
 use rspotify::model::page::Page;
-use rspotify::model::track::SimplifiedTrack;
+use rspotify::model::track::FullTrack;
 
 pub(in crate::tui) struct SearchResult {
-    pub artists: Option<Page<SimplifiedArtist>>,
-    pub songs: Option<Page<SimplifiedTrack>>,
+    pub artists: Option<Page<FullArtist>>,
+    pub songs: Option<Page<FullTrack>>,
     pub albums: Option<Page<SimplifiedAlbum>>,
 }
 
@@ -48,7 +48,7 @@ impl SearchState {
             }
             return;
         }
-        
+
         self.input.insert(self.byte_index(), new_char);
         self.move_cursor_right();
     }

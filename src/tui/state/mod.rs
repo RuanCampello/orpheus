@@ -1,4 +1,4 @@
-mod search;
+pub(super) mod search;
 
 use crate::spotify::Client;
 use crate::tui::draw;
@@ -8,6 +8,7 @@ use ratatui::crossterm::event::{self, Event};
 use ratatui::widgets::ListState;
 use ratatui::Terminal;
 use rspotify::model::playlist::SimplifiedPlaylist;
+use rspotify::model::search::SearchResult;
 use rspotify::model::user::PrivateUser;
 use rspotify::senum::SearchType;
 use std::io;
@@ -105,13 +106,18 @@ impl State {
             .spotify
             .search(query, SearchType::Album, 20, 0, None, None);
 
-        let (tracks, artists, albums) = tokio::join!(tracks_future, artists_future, albums_future);
-
-        match tracks {
-            Ok(tracks) => {
-                println!("tracks: {tracks:?}")
+        #[allow(clippy::single_match)]
+        match tokio::try_join!(tracks_future, artists_future, albums_future) {
+            Ok((
+                SearchResult::Tracks(tracks),
+                SearchResult::Artists(artists),
+                SearchResult::Albums(albums),
+            )) => {
+                self.search_state.results.songs = Some(tracks);
+                self.search_state.results.artists = Some(artists);
+                self.search_state.results.albums = Some(albums);
             }
-            Err(_) => {}
+            _ => {}
         };
     }
 }
