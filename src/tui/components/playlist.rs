@@ -1,8 +1,6 @@
-use crate::tui::colours::Palette;
-use crate::tui::components::pad;
+use crate::tui::components::{pad, BlockExt, ListExt};
 use crate::tui::State;
 use ratatui::layout::Rect;
-use ratatui::style::Style;
 use ratatui::text::Span;
 use ratatui::widgets::{Block, BorderType, List, ListItem};
 use ratatui::{text, Frame};
@@ -14,7 +12,7 @@ pub(in crate::tui) fn draw_playlists_section<'a>(
 ) {
     let playlists_block = Block::bordered()
         .border_type(BorderType::Rounded)
-        .title(pad("Playlist", 2));
+        .title(pad("Playlist", 2)).bordered_section(state.playlist_state.active);
 
     let playlists: Vec<ListItem> = state
         .playlist_state
@@ -25,7 +23,7 @@ pub(in crate::tui) fn draw_playlists_section<'a>(
 
     let playlists = List::new(playlists)
         .block(playlists_block)
-        .highlight_style(Style::new().bg(Palette::Secondary.into()));
+        .highlightable_section(state.playlist_state.active);
 
     frame.render_stateful_widget(playlists, area, &mut state.playlist_state.state);
 }

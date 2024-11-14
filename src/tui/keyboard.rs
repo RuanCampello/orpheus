@@ -29,14 +29,15 @@ impl Navigable for PlaylistState {
     }
 
     fn update(&mut self, key: KeyCode) {
-        if !self.active {
-            return;
-        };
-
-        match key {
-            KeyCode::Up => self.previous(),
-            KeyCode::Down => self.next(),
-            _ => {}
+        if self.active {
+            match key {
+                KeyCode::Up => self.previous(),
+                KeyCode::Down => self.next(),
+                KeyCode::Esc | KeyCode::Char('1') => self.active = false,
+                _ => {}
+            }
+        } else if let KeyCode::Char('1') = key {
+            self.active = true
         }
     }
 }
@@ -46,14 +47,14 @@ impl State {
         if let Some(action) = self.determine_key_action(key) {
             match action {
                 KeyAction::Navigation => self.handle_navigation(key),
-                _ => {}
+                KeyAction::Character(c) => self.handle_character(c),
             }
         }
     }
 
     fn determine_key_action(&self, key: KeyCode) -> Option<KeyAction> {
         match key {
-            KeyCode::Up | KeyCode::Down => Some(KeyAction::Navigation),
+            KeyCode::Up | KeyCode::Down | KeyCode::Esc => Some(KeyAction::Navigation),
             KeyCode::Char(c) => Some(KeyAction::Character(c)),
             _ => None,
         }
@@ -62,6 +63,13 @@ impl State {
     fn handle_navigation(&mut self, key: KeyCode) {
         if self.playlist_state.active {
             self.playlist_state.update(key);
+        }
+    }
+
+    fn handle_character(&mut self, c: char) {
+        match c {
+            '1' => self.playlist_state.update(KeyCode::Char(c)),
+            _ => {}
         }
     }
 }
