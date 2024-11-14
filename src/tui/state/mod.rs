@@ -9,6 +9,7 @@ use ratatui::widgets::ListState;
 use ratatui::Terminal;
 use rspotify::model::playlist::SimplifiedPlaylist;
 use rspotify::model::user::PrivateUser;
+use rspotify::senum::SearchType;
 use std::io;
 use std::io::Stdout;
 use std::time::{Duration, Instant};
@@ -62,7 +63,7 @@ impl State {
         }
     }
 
-    pub fn run(
+    pub async fn run(
         &mut self,
         terminal: &mut Terminal<CrosstermBackend<Stdout>>,
         tick_rate: Duration,
@@ -75,7 +76,7 @@ impl State {
             let timeout = tick_rate.saturating_sub(last_tick.elapsed());
             if event::poll(timeout)? {
                 if let Event::Key(key) = event::read()? {
-                    self.on_key(key.code)
+                    self.on_key(key.code).await;
                 }
             }
 
@@ -87,5 +88,30 @@ impl State {
                 return Ok(());
             }
         }
+    }
+
+    pub(super) async fn search(&mut self) {
+        let query = self.search_state.input.as_str();
+        let tracks_future = self
+            .client
+            .spotify
+            .search(query, SearchType::Track, 20, 0, None, None);
+        let artists_future =
+            self.client
+                .spotify
+                .search(query, SearchType::Artist, 20, 0, None, None);
+        let albums_future = self
+            .client
+            .spotify
+            .search(query, SearchType::Album, 20, 0, None, None);
+
+        let (tracks, artists, albums) = tokio::join!(tracks_future, artists_future, albums_future);
+
+        match tracks {
+            Ok(tracks) => {
+                println!("tracks: {tracks:?}")
+            }
+            Err(_) => {}
+        };
     }
 }

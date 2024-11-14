@@ -2,6 +2,12 @@ use crate::tui::state::PlaylistState;
 use crate::tui::State;
 use ratatui::crossterm::event::KeyCode;
 
+enum KeyAction {
+    SearchControl,
+    Navigation,
+    Character(char),
+}
+
 trait Navigable {
     fn next(&mut self);
     fn previous(&mut self);
@@ -39,34 +45,52 @@ impl Navigable for PlaylistState {
 }
 
 impl State {
-    pub(super) fn on_key(&mut self, key: KeyCode) {
-        match key {
-            KeyCode::Char(c) => self.handle_character(c),
-            _ => self.handle_navigation(key),
+    pub(super) async fn on_key(&mut self, k: KeyCode) {
+        if let Some(action) = self.determine_key_action(k) {
+            match action {
+                KeyAction::SearchControl => self.handle_search_control(k).await,
+                KeyAction::Navigation => self.handle_navigation(k),
+                KeyAction::Character(c) => self.on_char(c),
+            }
         }
     }
 
-    fn handle_navigation(&mut self, key: KeyCode) {
-        if self.playlist_state.active {
-            self.playlist_state.update(key);
-        } else if self.search_state.active {
-            self.search_state.update(key);
-        };
+    fn determine_key_action(&self, k: KeyCode) -> Option<KeyAction> {
+        match k {
+            KeyCode::Esc | KeyCode::Enter | KeyCode::Backspace if self.search_state.active => {
+                Some(KeyAction::SearchControl)
+            }
+            KeyCode::Down | KeyCode::Up | KeyCode::Right | KeyCode::Left => {
+                Some(KeyAction::Navigation)
+            }
+            KeyCode::Char(c) => Some(KeyAction::Character(c)),
+            _ => None,
+        }
     }
 
-    fn handle_character(&mut self, c: char) {
+    async fn handle_search_control(&mut self, k: KeyCode) {
+        match k {
+            KeyCode::Esc | KeyCode::Backspace => self.search_state.update(k),
+            KeyCode::Enter => self.search().await,
+            _ => {}
+        }
+    }
+
+    fn handle_navigation(&mut self, k: KeyCode) {
+        match k {
+            KeyCode::Down | KeyCode::Up => self.playlist_state.update(k),
+            _ => {}
+        }
+    }
+
+    fn on_char(&mut self, c: char) {
         match c {
             '1' => self.playlist_state.update(KeyCode::Char(c)),
             'q' => match self.search_state.active {
-                true => self.search_state.insert_char(c),
-                false => self.should_quit = true,
+                true => self.search_state.handle_char(c),
+                _ => self.should_quit = true,
             },
-            'e' => self.search_state.active = true,
-            _ => {
-                if self.search_state.active {
-                    self.search_state.insert_char(c)
-                }
-            }
+            _ => self.search_state.handle_char(c),
         }
     }
 }

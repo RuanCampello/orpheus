@@ -41,7 +41,14 @@ impl SearchState {
         }
     }
 
-    pub fn insert_char(&mut self, new_char: char) {
+    pub fn handle_char(&mut self, new_char: char) {
+        if !self.active {
+            if new_char == 'e' {
+                self.active = true;
+            }
+            return;
+        }
+        
         self.input.insert(self.byte_index(), new_char);
         self.move_cursor_right();
     }

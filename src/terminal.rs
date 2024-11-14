@@ -22,7 +22,7 @@ pub async fn run(tick_rate: Duration, client: Client) -> Result<(), Box<dyn std:
     let mut terminal = Terminal::new(backend)?;
 
     let mut app = State::new(client).await;
-    let app_res = app.run(&mut terminal, tick_rate);
+    let app_res = app.run(&mut terminal, tick_rate).await;
 
     disable_raw_mode()?;
     execute!(
