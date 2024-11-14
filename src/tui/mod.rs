@@ -1,11 +1,16 @@
+mod components;
+mod colours;
+
 use crate::spotify::Client;
+use components::playlist::draw_playlists_section;
 use ratatui::backend::CrosstermBackend;
 use ratatui::crossterm::event;
 use ratatui::crossterm::event::{Event, KeyCode};
 use ratatui::layout::{Constraint, Layout};
 use ratatui::style::{Color, Style};
-use ratatui::widgets::{Block, BorderType};
+use ratatui::widgets::{Block, BorderType, ListState};
 use ratatui::{Frame, Terminal};
+use rspotify::model::playlist::SimplifiedPlaylist;
 use rspotify::model::user::PrivateUser;
 use std::io;
 use std::io::Stdout;
@@ -15,9 +20,33 @@ use std::time::{Duration, Instant};
 pub(super) struct State {
     client: Client,
     user: PrivateUser,
-    // search_state: SearchState<'a>
+    pub playlist_state: PlaylistState,
     should_quit: bool,
     // _marker: PhantomData<&'a ()>,
+}
+pub(super) struct PlaylistState {
+    pub playlists: Vec<SimplifiedPlaylist>,
+    pub state: ListState,
+}
+
+impl PlaylistState {
+    fn new(playlists: Vec<SimplifiedPlaylist>) -> Self {
+        let state = ListState::default().with_selected(Some(0));
+        Self {
+            playlists,
+            state,
+        }
+    }
+
+    pub fn next(&mut self) {
+        let i = self.state.selected().unwrap_or(usize::MAX).saturating_add(1) % self.playlists.len();
+        self.state.select(Some(i));
+    }
+
+    pub fn previous(&mut self) {
+        let i = self.state.selected().unwrap_or(0).saturating_sub(1) % self.playlists.len();
+        self.state.select(Some(i));
+    }
 }
 
 // pub struct SearchState<'a> {}
@@ -25,8 +54,10 @@ pub(super) struct State {
 impl State {
     pub async fn new(client: Client) -> Self {
         let user = client.spotify.current_user().await.expect("Current user not found");
+        let playlists = client.spotify.current_user_playlists(50, 0).await.expect("Playlists not found");
+        let playlist_state = PlaylistState::new(playlists.items);
 
-        Self { client, user, should_quit: false }
+        Self { client, user, playlist_state, should_quit: false }
     }
 
     pub fn run(&mut self, terminal: &mut Terminal<CrosstermBackend<Stdout>>, tick_rate: Duration) -> io::Result<()> {
@@ -57,12 +88,12 @@ impl State {
 
 fn draw(frame: &mut Frame, state: &mut State) {
     let [title_area, remaining_area] = Layout::vertical([Constraint::Length(5), Constraint::Min(0)]).areas(frame.area());
-    let username = state.user.display_name.as_deref().unwrap_or("Some");
 
     let block = Block::bordered()
-        .title(username)
+        .title("Orpheus")
         .border_style(Style::new().fg(Color::Red))
         .border_type(BorderType::Rounded);
 
     frame.render_widget(block, title_area);
+    draw_playlists_section(frame, state, remaining_area);
 }
