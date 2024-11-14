@@ -1,5 +1,5 @@
 use crate::spotify::Client;
-use crate::tui::State;
+use crate::tui::state::State;
 use ratatui::backend::CrosstermBackend;
 use ratatui::crossterm::terminal::{
     disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen,

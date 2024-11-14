@@ -5,7 +5,7 @@ use ratatui::text::Span;
 use ratatui::widgets::{Block, BorderType, List, ListItem};
 use ratatui::{text, Frame};
 
-pub(in crate::tui) fn draw_playlists_section<'a>(
+pub fn draw_playlists_section<'a>(
     frame: &'a mut Frame,
     state: &'a mut State,
     area: Rect,

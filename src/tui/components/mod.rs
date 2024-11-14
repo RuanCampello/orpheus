@@ -1,4 +1,5 @@
-pub mod playlist;
+pub(super) mod playlist;
+pub(super) mod search;
 
 use crate::tui::colours::Palette;
 use ratatui::style::{Style, Stylize};
@@ -8,8 +9,6 @@ pub(self) fn pad<'a>(content: &'a str, size: usize) -> String {
     let padding = " ".repeat(size);
     format!("{padding}{content}{padding}")
 }
-
-// pub (self) fn
 
 trait BlockExt {
     fn bordered_section(self, active: bool) -> Self;

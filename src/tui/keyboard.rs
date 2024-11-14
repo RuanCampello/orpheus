@@ -1,10 +1,6 @@
-use crate::tui::{PlaylistState, State};
+use crate::tui::state::PlaylistState;
+use crate::tui::State;
 use ratatui::crossterm::event::KeyCode;
-
-enum KeyAction {
-    Navigation,
-    Character(char),
-}
 
 trait Navigable {
     fn next(&mut self);
@@ -44,32 +40,33 @@ impl Navigable for PlaylistState {
 
 impl State {
     pub(super) fn on_key(&mut self, key: KeyCode) {
-        if let Some(action) = self.determine_key_action(key) {
-            match action {
-                KeyAction::Navigation => self.handle_navigation(key),
-                KeyAction::Character(c) => self.handle_character(c),
-            }
-        }
-    }
-
-    fn determine_key_action(&self, key: KeyCode) -> Option<KeyAction> {
         match key {
-            KeyCode::Up | KeyCode::Down | KeyCode::Esc => Some(KeyAction::Navigation),
-            KeyCode::Char(c) => Some(KeyAction::Character(c)),
-            _ => None,
+            KeyCode::Char(c) => self.handle_character(c),
+            _ => self.handle_navigation(key),
         }
     }
 
     fn handle_navigation(&mut self, key: KeyCode) {
         if self.playlist_state.active {
             self.playlist_state.update(key);
-        }
+        } else if self.search_state.active {
+            self.search_state.update(key);
+        };
     }
 
     fn handle_character(&mut self, c: char) {
         match c {
             '1' => self.playlist_state.update(KeyCode::Char(c)),
-            _ => {}
+            'q' => match self.search_state.active {
+                true => self.search_state.insert_char(c),
+                false => self.should_quit = true,
+            },
+            'e' => self.search_state.active = true,
+            _ => {
+                if self.search_state.active {
+                    self.search_state.insert_char(c)
+                }
+            }
         }
     }
 }
