@@ -3,9 +3,9 @@ use crate::spotify::{get_spotify, get_token, Client};
 use rspotify::oauth2::SpotifyOAuth;
 use std::time::Duration;
 
-mod tui;
 mod spotify;
 mod terminal;
+mod tui;
 
 const SCOPES: [&str; 14] = [
     "playlist-read-collaborative",
@@ -40,7 +40,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     match get_token(&mut oauth, client_config.get_port()).await {
         Some(token_info) => {
             println!("TOKEN {token_info:?}");
-            
+
             let (spotify, exp) = get_spotify(token_info);
             let client = Client::new(spotify, oauth);
 
@@ -48,7 +48,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
         None => println!("Failed to authorize Spotify"),
     };
-
 
     Ok(())
 }

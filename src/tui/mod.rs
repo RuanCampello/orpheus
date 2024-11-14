@@ -1,13 +1,12 @@
-mod components;
 mod colours;
+mod components;
+mod keyboard;
 
 use crate::spotify::Client;
 use components::playlist::draw_playlists_section;
 use ratatui::backend::CrosstermBackend;
-use ratatui::crossterm::event;
-use ratatui::crossterm::event::{Event, KeyCode};
+use ratatui::crossterm::event::{self,Event};
 use ratatui::layout::{Constraint, Layout};
-use ratatui::style::{Color, Style};
 use ratatui::widgets::{Block, BorderType, ListState};
 use ratatui::{Frame, Terminal};
 use rspotify::model::playlist::SimplifiedPlaylist;
@@ -27,6 +26,7 @@ pub(super) struct State {
 pub(super) struct PlaylistState {
     pub playlists: Vec<SimplifiedPlaylist>,
     pub state: ListState,
+    pub active: bool,
 }
 
 impl PlaylistState {
@@ -35,32 +35,38 @@ impl PlaylistState {
         Self {
             playlists,
             state,
+            active: true,
         }
-    }
-
-    pub fn next(&mut self) {
-        let i = self.state.selected().unwrap_or(usize::MAX).saturating_add(1) % self.playlists.len();
-        self.state.select(Some(i));
-    }
-
-    pub fn previous(&mut self) {
-        let i = self.state.selected().unwrap_or(0).saturating_sub(1) % self.playlists.len();
-        self.state.select(Some(i));
     }
 }
 
-// pub struct SearchState<'a> {}
-
 impl State {
     pub async fn new(client: Client) -> Self {
-        let user = client.spotify.current_user().await.expect("Current user not found");
-        let playlists = client.spotify.current_user_playlists(50, 0).await.expect("Playlists not found");
-        let playlist_state = PlaylistState::new(playlists.items);
+        let user_future = client.spotify.current_user();
+        let playlists_future = client.spotify.current_user_playlists(50, 0);
 
-        Self { client, user, playlist_state, should_quit: false }
+        let (user, playlists) = tokio::join!(user_future, playlists_future);
+
+        let user = user.expect("Current user not found");
+
+        let playlist_state = match playlists {
+            Ok(page) => PlaylistState::new(page.items),
+            Err(_) => PlaylistState::new(Vec::new()),
+        };
+
+        Self {
+            client,
+            user,
+            playlist_state,
+            should_quit: false,
+        }
     }
 
-    pub fn run(&mut self, terminal: &mut Terminal<CrosstermBackend<Stdout>>, tick_rate: Duration) -> io::Result<()> {
+    pub fn run(
+        &mut self,
+        terminal: &mut Terminal<CrosstermBackend<Stdout>>,
+        tick_rate: Duration,
+    ) -> io::Result<()> {
         let mut last_tick = Instant::now();
 
         loop {
@@ -69,9 +75,7 @@ impl State {
             let timeout = tick_rate.saturating_sub(last_tick.elapsed());
             if event::poll(timeout)? {
                 if let Event::Key(key) = event::read()? {
-                    if key.code == KeyCode::Char('q') {
-                        self.should_quit = true;
-                    }
+                    self.on_key(key.code)
                 }
             }
 
@@ -87,13 +91,20 @@ impl State {
 }
 
 fn draw(frame: &mut Frame, state: &mut State) {
-    let [title_area, remaining_area] = Layout::vertical([Constraint::Length(5), Constraint::Min(0)]).areas(frame.area());
+    let [title_area, remaining_area] =
+        Layout::vertical([Constraint::Length(3), Constraint::Min(0)]).areas(frame.area());
 
     let block = Block::bordered()
         .title("Orpheus")
-        .border_style(Style::new().fg(Color::Red))
         .border_type(BorderType::Rounded);
 
+    let [playlist_area, main_area, queue_area] = Layout::horizontal([
+        Constraint::Percentage(20),
+        Constraint::Min(0),
+        Constraint::Percentage(25),
+    ])
+    .areas(remaining_area);
+
     frame.render_widget(block, title_area);
-    draw_playlists_section(frame, state, remaining_area);
+    draw_playlists_section(frame, state, playlist_area);
 }

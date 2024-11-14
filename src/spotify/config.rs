@@ -11,9 +11,16 @@ impl Config {
         dotenv::dotenv().ok();
         let client_id = dotenv::var("CLIENT_ID").expect("CLIENT_ID must be set");
         let client_secret = dotenv::var("CLIENT_SECRET").expect("CLIENT_SECRET must be set");
-        let port: u16 = dotenv::var("PORT").ok().and_then(|p| p.parse().ok()).unwrap_or(PORT);
+        let port: u16 = dotenv::var("PORT")
+            .ok()
+            .and_then(|p| p.parse().ok())
+            .unwrap_or(PORT);
 
-        Self { client_id, client_secret, port: Some(port) }
+        Self {
+            client_id,
+            client_secret,
+            port: Some(port),
+        }
     }
 
     pub fn get_port(&self) -> u16 {

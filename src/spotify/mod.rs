@@ -1,9 +1,9 @@
 pub mod config;
 
-use std::io;
 use rspotify::client::Spotify;
 use rspotify::oauth2::{SpotifyClientCredentials, SpotifyOAuth, TokenInfo};
 use rspotify::util::{process_token, request_token};
+use std::io;
 use std::io::Read;
 use std::net::{TcpListener, TcpStream};
 use std::time::{Duration, SystemTime};
@@ -13,7 +13,7 @@ pub(super) struct Client {
     oauth: SpotifyOAuth,
 }
 
-    impl Client {
+impl Client {
     pub fn new(spotify: Spotify, oauth: SpotifyOAuth) -> Self {
         Self { spotify, oauth }
     }
@@ -23,9 +23,7 @@ pub async fn get_token(spotify_oauth: &mut SpotifyOAuth, port: u16) -> Option<To
     match spotify_oauth.get_cached_token().await {
         Some(token) => Some(token),
         None => match redirect_to_authorize(spotify_oauth, port) {
-            Ok(mut url) => {
-                 process_token(spotify_oauth, &mut url).await
-            }
+            Ok(mut url) => process_token(spotify_oauth, &mut url).await,
             Err(()) => {
                 println!("Starting webserver failed. Continuing with manual authentication");
                 request_token(spotify_oauth);
@@ -36,15 +34,14 @@ pub async fn get_token(spotify_oauth: &mut SpotifyOAuth, port: u16) -> Option<To
                     Err(_) => None,
                 }
             }
-        }
+        },
     }
 }
 
 pub fn get_spotify(token_info: TokenInfo) -> (Spotify, SystemTime) {
     let token_expiry = {
         if let Some(expires_at) = token_info.expires_at {
-            SystemTime::UNIX_EPOCH
-                + Duration::from_secs(expires_at as u64)
+            SystemTime::UNIX_EPOCH + Duration::from_secs(expires_at as u64)
                 - Duration::from_secs(10)
         } else {
             SystemTime::now()
@@ -61,7 +58,6 @@ pub fn get_spotify(token_info: TokenInfo) -> (Spotify, SystemTime) {
 
     (spotify, token_expiry)
 }
-
 
 fn redirect_to_authorize(spotify_oauth: &mut SpotifyOAuth, port: u16) -> Result<String, ()> {
     let listener = TcpListener::bind(format!("127.0.0.1:{}", port));
@@ -90,7 +86,6 @@ fn redirect_to_authorize(spotify_oauth: &mut SpotifyOAuth, port: u16) -> Result<
 
     Err(())
 }
-
 
 fn handle_connection(mut stream: TcpStream) -> Option<String> {
     let mut buff = [0; 1000];
