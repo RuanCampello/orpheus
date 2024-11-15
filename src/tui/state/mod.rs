@@ -26,6 +26,7 @@ pub(crate) struct State {
     pub(super) search_state: SearchState,
     pub(super) should_quit: bool,
     pub(super) player: PlayerState,
+    window_height: u16,
 }
 
 pub(super) struct PlaylistState {
@@ -66,6 +67,7 @@ impl State {
             player: PlayerState::new(),
             search_state: SearchState::new(),
             should_quit: false,
+            window_height: 0,
         }
     }
 
@@ -78,7 +80,13 @@ impl State {
         let mut last_state_update = Instant::now();
 
         loop {
-            terminal.draw(|frame| draw(frame, self))?;
+            terminal.draw(|frame| {
+                if self.window_height != frame.area().height {
+                    self.window_height = frame.area().height;
+                }
+                
+                draw(frame, self)
+            })?;
 
             let timeout = tick_rate.saturating_sub(last_tick.elapsed());
             if event::poll(timeout)? {
@@ -115,7 +123,7 @@ impl State {
                 })
                 .unwrap_or("default_image_url");
 
-            if let Ok(ascii) = image_url_to_ascii(image_url) {
+            if let Ok(ascii) = image_url_to_ascii(image_url, &self.window_height) {
                 self.player.image = Some(ascii)
             }
 
