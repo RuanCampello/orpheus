@@ -114,15 +114,15 @@ impl State {
                 SearchResult::Albums(albums),
             )) => {
                 self.search_state.results.songs = Some(ResultItem {
-                    state: TableStateExt::new(tracks.items.len()),
+                    table_state: TableStateExt::new(tracks.items.len()),
                     data: tracks,
                 });
                 self.search_state.results.artists = Some(ResultItem {
-                    state: TableStateExt::new(artists.items.len()),
+                    table_state: TableStateExt::new(artists.items.len()),
                     data: artists,
                 });
                 self.search_state.results.albums = Some(ResultItem {
-                    state: TableStateExt::new(albums.items.len()),
+                    table_state: TableStateExt::new(albums.items.len()),
                     data: albums,
                 });
             }

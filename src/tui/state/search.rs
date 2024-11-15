@@ -8,7 +8,7 @@ use rspotify::model::track::FullTrack;
 
 pub(in crate::tui) struct ResultItem<T> {
     pub data: T,
-    pub state: TableStateExt,
+    pub table_state: TableStateExt,
 }
 
 pub(in crate::tui) struct SearchResult {
@@ -27,16 +27,13 @@ pub(in crate::tui) struct SearchState {
 pub(in crate::tui) struct TableStateExt {
     pub state: TableState,
     pub max_size: usize,
+    pub active: bool,
 }
 
 impl TableStateExt {
     pub fn new(max_size: usize) -> Self {
         let state = TableState::default().with_selected(0);
-        Self { state, max_size }
-    }
-
-    pub fn go_to_first(&mut self) {
-        self.state.select(Some(0));
+        Self { state, max_size, active: false }
     }
 }
 

@@ -77,16 +77,27 @@ impl State {
     }
 
     fn handle_navigation(&mut self, k: KeyCode) {
-        match k {
-            KeyCode::Down | KeyCode::Up if self.playlist_state.active => {
-                self.playlist_state.update(k)
+        if !self.is_navigation_key(k) {
+            return;
+        }
+
+        if self.playlist_state.active {
+            self.playlist_state.update(k);
+        }
+        if let Some(songs) = &mut self.search_state.results.songs {
+            if songs.table_state.active {
+                songs.table_state.update(k)
             }
-            KeyCode::Down | KeyCode::Up if self.search_state.results.songs.is_some() => {
-                if let Some(songs) = &mut self.search_state.results.songs {
-                    songs.state.update(k);
-                }
+        }
+        if let Some(albums) = &mut self.search_state.results.albums {
+            if albums.table_state.active {
+                albums.table_state.update(k)
             }
-            _ => {}
+        }
+        if let Some(artists) = &mut self.search_state.results.artists {
+            if artists.table_state.active {
+                artists.table_state.update(k)
+            }
         }
     }
 
@@ -97,7 +108,25 @@ impl State {
                 true => self.search_state.handle_char(c),
                 _ => self.should_quit = true,
             },
+            's' => match &mut self.search_state.results.songs {
+                Some(songs) => {
+                    songs.table_state.active = !songs.table_state.active;
+                }
+                None => self.search_state.handle_char(c),
+            },
+            'a' => match &mut self.search_state.results.albums {
+                Some(albums) => albums.table_state.active = !albums.table_state.active,
+                None => self.search_state.handle_char(c),
+            },
+            'd' => match &mut self.search_state.results.artists {
+                Some(artists) => artists.table_state.active = !artists.table_state.active,
+                None => self.search_state.handle_char(c),
+            },
             _ => self.search_state.handle_char(c),
         }
+    }
+
+    fn is_navigation_key(&self, k: KeyCode) -> bool {
+        matches!(k, KeyCode::Down | KeyCode::Up)
     }
 }

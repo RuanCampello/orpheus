@@ -84,20 +84,35 @@ pub fn draw_search_results(frame: &mut Frame, state: &mut State, area: Rect) {
             Constraint::Length(5),
         ]
         .as_ref();
-        let songs_table = draw_results_table(&songs.data.items, "Songs", songs_widths);
-        frame.render_stateful_widget(songs_table, songs_area, &mut songs.state.state);
+        let songs_table = draw_results_table(
+            &songs.data.items,
+            "Songs",
+            songs_widths,
+            songs.table_state.active,
+        );
+        frame.render_stateful_widget(songs_table, songs_area, &mut songs.table_state.state);
     }
 
-    if let Some(albums) = &state.search_state.results.albums {
+    if let Some(albums) = &mut state.search_state.results.albums {
         let albums_widths = [Constraint::Length(40), Constraint::Length(25)].as_ref();
-        let albums_table = draw_results_table(&albums.data.items, "Albums", albums_widths);
-        frame.render_widget(albums_table, albums_area);
+        let albums_table = draw_results_table(
+            &albums.data.items,
+            "Albums",
+            albums_widths,
+            albums.table_state.active,
+        );
+        frame.render_stateful_widget(albums_table, albums_area, &mut albums.table_state.state);
     }
 
-    if let Some(artists) = &state.search_state.results.artists {
+    if let Some(artists) = &mut state.search_state.results.artists {
         let artist_widths = [Constraint::Length(50)].as_ref();
-        let artists_table = draw_results_table(&artists.data.items, "Artists", artist_widths);
-        frame.render_widget(artists_table, artists_area);
+        let artists_table = draw_results_table(
+            &artists.data.items,
+            "Artists",
+            artist_widths,
+            artists.table_state.active,
+        );
+        frame.render_stateful_widget(artists_table, artists_area, &mut artists.table_state.state);
     }
 }
 
@@ -105,6 +120,7 @@ fn draw_results_table<'a, T: ToRow<'a> + 'a>(
     items: &[T],
     title: &'a str,
     widths: &[Constraint],
+    active: bool,
 ) -> Table<'a> {
     let rows: Vec<Row> = items.iter().map(|item| item.to_row()).collect();
 
@@ -113,6 +129,7 @@ fn draw_results_table<'a, T: ToRow<'a> + 'a>(
         .column_spacing(6)
         .block(
             Block::bordered()
+                .bordered_section(active)
                 .border_type(BorderType::Rounded)
                 .title(title)
                 .padding(Padding::proportional(1)),
