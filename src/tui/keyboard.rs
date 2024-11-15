@@ -8,7 +8,7 @@ enum KeyAction {
     Character(char),
 }
 
-trait Navigable {
+pub(super) trait Navigable {
     fn next(&mut self);
     fn previous(&mut self);
     fn update(&mut self, key: KeyCode);
@@ -78,7 +78,14 @@ impl State {
 
     fn handle_navigation(&mut self, k: KeyCode) {
         match k {
-            KeyCode::Down | KeyCode::Up => self.playlist_state.update(k),
+            KeyCode::Down | KeyCode::Up if self.playlist_state.active => {
+                self.playlist_state.update(k)
+            }
+            KeyCode::Down | KeyCode::Up if self.search_state.results.songs.is_some() => {
+                if let Some(songs) = &mut self.search_state.results.songs {
+                    songs.state.update(k);
+                }
+            }
             _ => {}
         }
     }

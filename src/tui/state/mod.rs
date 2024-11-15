@@ -2,7 +2,7 @@ pub(super) mod search;
 
 use crate::spotify::Client;
 use crate::tui::draw;
-use crate::tui::state::search::SearchState;
+use crate::tui::state::search::{ResultItem, SearchState, TableStateExt};
 use ratatui::backend::CrosstermBackend;
 use ratatui::crossterm::event::{self, Event};
 use ratatui::widgets::ListState;
@@ -113,9 +113,18 @@ impl State {
                 SearchResult::Artists(artists),
                 SearchResult::Albums(albums),
             )) => {
-                self.search_state.results.songs = Some(tracks);
-                self.search_state.results.artists = Some(artists);
-                self.search_state.results.albums = Some(albums);
+                self.search_state.results.songs = Some(ResultItem {
+                    state: TableStateExt::new(tracks.items.len()),
+                    data: tracks,
+                });
+                self.search_state.results.artists = Some(ResultItem {
+                    state: TableStateExt::new(artists.items.len()),
+                    data: artists,
+                });
+                self.search_state.results.albums = Some(ResultItem {
+                    state: TableStateExt::new(albums.items.len()),
+                    data: albums,
+                });
             }
             _ => {}
         };

@@ -1,6 +1,8 @@
+use crate::tui::colours::Palette;
 use crate::tui::components::{pad, BlockExt};
 use crate::tui::state::State;
 use ratatui::layout::{Alignment, Constraint, Layout, Position, Rect};
+use ratatui::style::{Style, Stylize};
 use ratatui::widgets::{Block, BorderType, Padding, Paragraph, Row, Table};
 use ratatui::Frame;
 use rspotify::model::album::SimplifiedAlbum;
@@ -17,7 +19,7 @@ impl<'a> ToRow<'a> for FullTrack {
         let duration = Duration::from_millis(self.duration_ms as u64);
         let minutes = duration.as_secs() / 60;
         let seconds = duration.as_secs() % 60;
-        
+
         Row::new(vec![
             self.name.to_string(),
             self.artists
@@ -74,7 +76,7 @@ pub fn draw_search_results(frame: &mut Frame, state: &mut State, area: Rect) {
         Layout::horizontal([Constraint::Percentage(50), Constraint::Percentage(50)])
             .areas(lower_area);
 
-    if let Some(songs) = &state.search_state.results.songs {
+    if let Some(songs) = &mut state.search_state.results.songs {
         let songs_widths = [
             Constraint::Length(40),
             Constraint::Length(25),
@@ -82,19 +84,19 @@ pub fn draw_search_results(frame: &mut Frame, state: &mut State, area: Rect) {
             Constraint::Length(5),
         ]
         .as_ref();
-        let songs_table = draw_results_table(&songs.items, "Songs", songs_widths);
-        frame.render_widget(songs_table, songs_area);
+        let songs_table = draw_results_table(&songs.data.items, "Songs", songs_widths);
+        frame.render_stateful_widget(songs_table, songs_area, &mut songs.state.state);
     }
 
     if let Some(albums) = &state.search_state.results.albums {
         let albums_widths = [Constraint::Length(40), Constraint::Length(25)].as_ref();
-        let albums_table = draw_results_table(&albums.items, "Albums", albums_widths);
+        let albums_table = draw_results_table(&albums.data.items, "Albums", albums_widths);
         frame.render_widget(albums_table, albums_area);
     }
 
     if let Some(artists) = &state.search_state.results.artists {
         let artist_widths = [Constraint::Length(50)].as_ref();
-        let artists_table = draw_results_table(&artists.items, "Artists", artist_widths);
+        let artists_table = draw_results_table(&artists.data.items, "Artists", artist_widths);
         frame.render_widget(artists_table, artists_area);
     }
 }
@@ -106,10 +108,13 @@ fn draw_results_table<'a, T: ToRow<'a> + 'a>(
 ) -> Table<'a> {
     let rows: Vec<Row> = items.iter().map(|item| item.to_row()).collect();
 
-    Table::new(rows, widths).block(
-        Block::bordered()
-            .border_type(BorderType::Rounded)
-            .title(title)
-            .padding(Padding::proportional(1)),
-    )
+    Table::new(rows, widths)
+        .row_highlight_style(Style::new().bg(Palette::Secondary.into()).bold())
+        .column_spacing(6)
+        .block(
+            Block::bordered()
+                .border_type(BorderType::Rounded)
+                .title(title)
+                .padding(Padding::proportional(1)),
+        )
 }

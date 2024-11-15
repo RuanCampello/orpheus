@@ -1,13 +1,20 @@
+use crate::tui::keyboard::Navigable;
 use ratatui::crossterm::event::KeyCode;
+use ratatui::widgets::TableState;
 use rspotify::model::album::SimplifiedAlbum;
 use rspotify::model::artist::FullArtist;
 use rspotify::model::page::Page;
 use rspotify::model::track::FullTrack;
 
+pub(in crate::tui) struct ResultItem<T> {
+    pub data: T,
+    pub state: TableStateExt,
+}
+
 pub(in crate::tui) struct SearchResult {
-    pub artists: Option<Page<FullArtist>>,
-    pub songs: Option<Page<FullTrack>>,
-    pub albums: Option<Page<SimplifiedAlbum>>,
+    pub artists: Option<ResultItem<Page<FullArtist>>>,
+    pub songs: Option<ResultItem<Page<FullTrack>>>,
+    pub albums: Option<ResultItem<Page<SimplifiedAlbum>>>,
 }
 
 pub(in crate::tui) struct SearchState {
@@ -15,6 +22,49 @@ pub(in crate::tui) struct SearchState {
     pub input: String,
     pub active: bool,
     pub cursor_position: usize,
+}
+
+pub(in crate::tui) struct TableStateExt {
+    pub state: TableState,
+    pub max_size: usize,
+}
+
+impl TableStateExt {
+    pub fn new(max_size: usize) -> Self {
+        let state = TableState::default().with_selected(0);
+        Self { state, max_size }
+    }
+
+    pub fn go_to_first(&mut self) {
+        self.state.select(Some(0));
+    }
+}
+
+impl Navigable for TableStateExt {
+    fn next(&mut self) {
+        let i = self
+            .state
+            .selected()
+            .map_or(0, |i| (i.saturating_add(1)) % self.max_size);
+
+        self.state.select(Some(i));
+    }
+
+    fn previous(&mut self) {
+        let i = self
+            .state
+            .selected()
+            .map_or(0, |i| (i.saturating_sub(1)) % self.max_size);
+        self.state.select(Some(i));
+    }
+
+    fn update(&mut self, key_code: KeyCode) {
+        match key_code {
+            KeyCode::Up => self.previous(),
+            KeyCode::Down => self.next(),
+            _ => {}
+        }
+    }
 }
 
 impl SearchState {
