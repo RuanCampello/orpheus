@@ -4,12 +4,6 @@ use crate::tui::State;
 use ratatui::crossterm::event::KeyCode;
 use rspotify::model::page::Page;
 
-enum KeyAction {
-    SearchControl,
-    Navigation,
-    Character(char),
-}
-
 pub(super) trait Navigable {
     fn next(&mut self);
     fn previous(&mut self);

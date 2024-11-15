@@ -77,41 +77,52 @@ pub fn draw_search_results(frame: &mut Frame, state: &mut State, area: Rect) {
             .areas(lower_area);
 
     if let Some(songs) = &mut state.search_state.results.songs {
-        let songs_widths = [
-            Constraint::Length(40),
-            Constraint::Length(25),
-            Constraint::Min(0),
+        let songs_widths = &[
+            Constraint::Percentage(40),
+            Constraint::Percentage(25),
+            Constraint::Percentage(15),
             Constraint::Length(5),
-        ]
-        .as_ref();
+        ];
+        let headers: Vec<&str> = vec!["Title", "Artist", "Album", "Time"];
+
         let songs_table = draw_results_table(
             &songs.data.items,
             "Songs",
             songs_widths,
             songs.table_state.active,
+            headers,
         );
+
         frame.render_stateful_widget(songs_table, songs_area, &mut songs.table_state.state);
     }
 
     if let Some(albums) = &mut state.search_state.results.albums {
-        let albums_widths = [Constraint::Length(40), Constraint::Length(25)].as_ref();
+        let albums_widths = &[Constraint::Length(40), Constraint::Length(25)];
+        let headers: Vec<&str> = vec!["Title", "Artist"];
+
         let albums_table = draw_results_table(
             &albums.data.items,
             "Albums",
             albums_widths,
             albums.table_state.active,
+            headers,
         );
+
         frame.render_stateful_widget(albums_table, albums_area, &mut albums.table_state.state);
     }
 
     if let Some(artists) = &mut state.search_state.results.artists {
-        let artist_widths = [Constraint::Length(50)].as_ref();
+        let headers: Vec<&str> = vec!["Name"];
+
+        let artist_widths = &[Constraint::Length(50)];
         let artists_table = draw_results_table(
             &artists.data.items,
             "Artists",
             artist_widths,
             artists.table_state.active,
+            headers,
         );
+
         frame.render_stateful_widget(artists_table, artists_area, &mut artists.table_state.state);
     }
 }
@@ -121,17 +132,22 @@ fn draw_results_table<'a, T: ToRow<'a> + 'a>(
     title: &'a str,
     widths: &[Constraint],
     active: bool,
+    headers: Vec<&'a str>,
 ) -> Table<'a> {
     let rows: Vec<Row> = items.iter().map(|item| item.to_row()).collect();
 
     Table::new(rows, widths)
-        .row_highlight_style(Style::new().bg(Palette::Secondary.into()).bold())
-        .column_spacing(6)
+        .row_highlight_style(match active {
+            true => Style::new().bg(Palette::Secondary.into()).bold(),
+            false => Style::new().bg(Palette::Foreground.into()).bold(),
+        })
+        .header(Row::new(headers))
+        .column_spacing(2)
         .block(
             Block::bordered()
                 .bordered_section(active)
                 .border_type(BorderType::Rounded)
-                .title(title)
+                .title(pad(title, 1))
                 .padding(Padding::proportional(1)),
         )
 }
