@@ -1,9 +1,9 @@
-use crate::spotify::config::Config;
-use crate::spotify::{get_spotify, get_token, Client};
+use crate::internal::config::Config;
+use crate::internal::{get_spotify, get_token, Client};
 use rspotify::oauth2::SpotifyOAuth;
 use std::time::Duration;
 
-mod spotify;
+mod internal;
 mod terminal;
 mod tui;
 

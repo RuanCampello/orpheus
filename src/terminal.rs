@@ -1,4 +1,4 @@
-use crate::spotify::Client;
+use crate::internal::Client;
 use crate::tui::state::State;
 use ratatui::backend::CrosstermBackend;
 use ratatui::crossterm::terminal::{

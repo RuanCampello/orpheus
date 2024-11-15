@@ -3,6 +3,7 @@ use crate::tui::components::search::{draw_search_input, draw_search_results};
 use crate::tui::state::State;
 use ratatui::layout::{Constraint, Layout};
 use ratatui::Frame;
+use crate::tui::components::player::draw_player;
 
 mod colours;
 mod components;
@@ -19,8 +20,10 @@ fn draw(frame: &mut Frame, state: &mut State) {
         Constraint::Percentage(25),
     ])
     .areas(remaining_area);
-
+    
     draw_search_input(frame, state, search);
     draw_search_results(frame, state, main_area);
     draw_playlists_section(frame, state, playlist_area);
+    
+    draw_player(frame, state, queue_area);
 }

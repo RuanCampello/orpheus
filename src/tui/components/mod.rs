@@ -1,5 +1,6 @@
 pub(super) mod playlist;
 pub(super) mod search;
+pub(super) mod player;
 
 use crate::tui::colours::Palette;
 use ratatui::style::{Style, Stylize};
