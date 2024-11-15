@@ -54,13 +54,9 @@ impl Navigable for TableStateExt {
             .map_or(0, |i| (i.saturating_sub(1)) % self.max_size);
         self.state.select(Some(i));
     }
-
-    fn update(&mut self, key_code: KeyCode) {
-        match key_code {
-            KeyCode::Up => self.previous(),
-            KeyCode::Down => self.next(),
-            _ => {}
-        }
+    
+    fn toggle_active(&mut self) {
+        self.active = !self.active;
     }
 }
 

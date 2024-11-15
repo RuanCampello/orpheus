@@ -1,6 +1,8 @@
+use crate::tui::state::search::ResultItem;
 use crate::tui::state::PlaylistState;
 use crate::tui::State;
 use ratatui::crossterm::event::KeyCode;
+use rspotify::model::page::Page;
 
 enum KeyAction {
     SearchControl,
@@ -11,7 +13,7 @@ enum KeyAction {
 pub(super) trait Navigable {
     fn next(&mut self);
     fn previous(&mut self);
-    fn update(&mut self, key: KeyCode);
+    fn toggle_active(&mut self);
 }
 
 impl Navigable for PlaylistState {
@@ -30,103 +32,86 @@ impl Navigable for PlaylistState {
         self.state.select(Some(i));
     }
 
-    fn update(&mut self, key: KeyCode) {
-        if self.active {
-            match key {
-                KeyCode::Up => self.previous(),
-                KeyCode::Down => self.next(),
-                KeyCode::Esc | KeyCode::Char('1') => self.active = false,
-                _ => {}
-            }
-        } else if let KeyCode::Char('1') = key {
-            self.active = true
-        }
+    fn toggle_active(&mut self) {
+        self.active = !self.active;
     }
 }
 
 impl State {
-    pub(super) async fn on_key(&mut self, k: KeyCode) {
-        if let Some(action) = self.determine_key_action(k) {
-            match action {
-                KeyAction::SearchControl => self.handle_search_control(k).await,
-                KeyAction::Navigation => self.handle_navigation(k),
-                KeyAction::Character(c) => self.on_char(c),
+    pub(super) async fn handle_key(&mut self, key: KeyCode) {
+        match key {
+            // navigation keys
+            KeyCode::Up | KeyCode::Down => self.navigate(key),
+
+            // character-specific actions
+            KeyCode::Char(c) => self.handle_character(c),
+
+            // search-specific actions
+            KeyCode::Esc | KeyCode::Enter | KeyCode::Backspace => {
+                if self.search_state.active {
+                    self.handle_search_control(key).await;
+                }
             }
+
+            _ => {}
         }
     }
 
-    fn determine_key_action(&self, k: KeyCode) -> Option<KeyAction> {
-        match k {
-            KeyCode::Esc | KeyCode::Enter | KeyCode::Backspace if self.search_state.active => {
-                Some(KeyAction::SearchControl)
-            }
-            KeyCode::Down | KeyCode::Up | KeyCode::Right | KeyCode::Left => {
-                Some(KeyAction::Navigation)
-            }
-            KeyCode::Char(c) => Some(KeyAction::Character(c)),
-            _ => None,
+    fn handle_character(&mut self, c: char) {
+        match self.search_state.active {
+            false => match c {
+                '1' => self.playlist_state.toggle_active(),
+                's' => Self::toggle_active_state(&mut self.search_state.results.songs),
+                'a' => Self::toggle_active_state(&mut self.search_state.results.albums),
+                'd' => Self::toggle_active_state(&mut self.search_state.results.artists),
+                'q' => self.should_quit = true,
+                'e' => self.search_state.active = !self.search_state.active,
+                _ => {}
+            },
+            true => self.search_state.handle_char(c),
         }
     }
 
-    async fn handle_search_control(&mut self, k: KeyCode) {
-        match k {
-            KeyCode::Esc | KeyCode::Backspace => self.search_state.update(k),
+    async fn handle_search_control(&mut self, key: KeyCode) {
+        match key {
+            KeyCode::Esc | KeyCode::Backspace => self.search_state.update(key),
             KeyCode::Enter => self.search().await,
             _ => {}
         }
     }
 
-    fn handle_navigation(&mut self, k: KeyCode) {
-        if !self.is_navigation_key(k) {
-            return;
-        }
-
+    fn navigate(&mut self, key: KeyCode) {
         if self.playlist_state.active {
-            self.playlist_state.update(k);
+            Self::update_navigation(&mut self.playlist_state, key);
         }
         if let Some(songs) = &mut self.search_state.results.songs {
             if songs.table_state.active {
-                songs.table_state.update(k)
+                Self::update_navigation(&mut songs.table_state, key);
             }
         }
         if let Some(albums) = &mut self.search_state.results.albums {
             if albums.table_state.active {
-                albums.table_state.update(k)
+                Self::update_navigation(&mut albums.table_state, key);
             }
         }
         if let Some(artists) = &mut self.search_state.results.artists {
             if artists.table_state.active {
-                artists.table_state.update(k)
+                Self::update_navigation(&mut artists.table_state, key);
             }
         }
     }
 
-    fn on_char(&mut self, c: char) {
-        match c {
-            '1' => self.playlist_state.update(KeyCode::Char(c)),
-            'q' => match self.search_state.active {
-                true => self.search_state.handle_char(c),
-                _ => self.should_quit = true,
-            },
-            's' => match &mut self.search_state.results.songs {
-                Some(songs) => {
-                    songs.table_state.active = !songs.table_state.active;
-                }
-                None => self.search_state.handle_char(c),
-            },
-            'a' => match &mut self.search_state.results.albums {
-                Some(albums) => albums.table_state.active = !albums.table_state.active,
-                None => self.search_state.handle_char(c),
-            },
-            'd' => match &mut self.search_state.results.artists {
-                Some(artists) => artists.table_state.active = !artists.table_state.active,
-                None => self.search_state.handle_char(c),
-            },
-            _ => self.search_state.handle_char(c),
+    fn update_navigation<T: Navigable>(navigable: &mut T, key: KeyCode) {
+        match key {
+            KeyCode::Up => navigable.previous(),
+            KeyCode::Down => navigable.next(),
+            _ => {}
         }
     }
 
-    fn is_navigation_key(&self, k: KeyCode) -> bool {
-        matches!(k, KeyCode::Down | KeyCode::Up)
+    fn toggle_active_state<T>(state: &mut Option<ResultItem<Page<T>>>) {
+        if let Some(result_item) = state {
+            result_item.table_state.toggle_active();
+        }
     }
 }
