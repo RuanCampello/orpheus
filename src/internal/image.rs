@@ -2,7 +2,7 @@ use image::imageops::FilterType;
 use image::{DynamicImage, GenericImageView, ImageReader};
 use std::io::Cursor;
 
-const ASCII_CHARS: &[u8] = b"@%#*+=-:. ";
+const ASCII_CHARS: &[u8] = b"#+=-|:. ";
 
 pub fn image_url_to_ascii<'a>(url: &'a str) -> Result<String, Box<dyn std::error::Error>> {
     let response = reqwest::blocking::get(url)?;
