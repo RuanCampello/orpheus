@@ -8,10 +8,14 @@ pub fn image_url_to_ascii<'a>(url: &'a str) -> Result<String, Box<dyn std::error
     let response = reqwest::blocking::get(url)?;
     let image_data = response.bytes()?;
 
-    let image = ImageReader::new(Cursor::new(image_data))
+    let size = 50;
+
+    let mut image = ImageReader::new(Cursor::new(image_data))
         .with_guessed_format()?
-        .decode()?
-        .resize(50, 50, FilterType::Nearest);
+        .decode()?;
+
+    let height = ((size * image.height()) / (image.width() * 2)).max(1);
+    image = image.resize_exact(size, height, FilterType::Nearest);
 
     let ascii_string = image_to_ascii(&image);
 
