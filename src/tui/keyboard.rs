@@ -69,7 +69,14 @@ impl State {
     async fn handle_search_control(&mut self, key: KeyCode) {
         match key {
             KeyCode::Esc | KeyCode::Backspace => self.search_state.update(key),
-            KeyCode::Enter => self.search().await,
+            KeyCode::Enter => {
+                self.search().await;
+
+                self.search_state.active = false;
+                if let Some(songs) = &mut self.search_state.results.songs {
+                    songs.table_state.active = true
+                }
+            }
             _ => {}
         }
     }
