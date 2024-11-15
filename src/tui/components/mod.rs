@@ -1,10 +1,10 @@
+pub(super) mod player;
 pub(super) mod playlist;
 pub(super) mod search;
-pub(super) mod player;
 
 use crate::tui::colours::Palette;
 use ratatui::style::{Style, Stylize};
-use ratatui::widgets::{Block, Borders, List};
+use ratatui::widgets::{Block, BorderType, Borders, List};
 
 pub(self) fn pad<'a>(content: &'a str, size: usize) -> String {
     let padding = " ".repeat(size);
@@ -13,6 +13,7 @@ pub(self) fn pad<'a>(content: &'a str, size: usize) -> String {
 
 trait BlockExt {
     fn bordered_section(self, active: bool) -> Self;
+    fn secondary_border(self) -> Self;
 }
 
 trait ListExt {
@@ -25,6 +26,11 @@ impl<'a> BlockExt for Block<'a> {
             true => Style::new().fg(Palette::Secondary.into()),
             false => Style::new().fg(Palette::Foreground.into()),
         })
+    }
+    fn secondary_border(self) -> Self {
+        self.borders(Borders::ALL)
+            .border_type(BorderType::Rounded)
+            .border_style(Style::new().fg(Palette::Foreground.into()))
     }
 }
 

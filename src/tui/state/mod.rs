@@ -67,7 +67,7 @@ impl State {
             player: PlayerState::new(),
             search_state: SearchState::new(),
             should_quit: false,
-            window_height: 0,
+            window_height: 55,
         }
     }
 
@@ -79,19 +79,18 @@ impl State {
         let mut last_tick = Instant::now();
         let mut last_state_update = Instant::now();
 
+        // fetches the currently playing state on the launch.
+        self.update_playing_state().await;
+
         loop {
-            terminal.draw(|frame| {
-                if self.window_height != frame.area().height {
-                    self.window_height = frame.area().height;
-                }
-                
-                draw(frame, self)
-            })?;
+            terminal.draw(|frame| draw(frame, self))?;
 
             let timeout = tick_rate.saturating_sub(last_tick.elapsed());
             if event::poll(timeout)? {
-                if let Event::Key(key) = event::read()? {
-                    self.handle_key(key.code).await;
+                match event::read()? {
+                    Event::Key(key) => self.handle_key(key.code).await,
+                    Event::Resize(x, y) => self.handle_resize(x, y),
+                    _ => {}
                 }
             }
 
@@ -110,6 +109,7 @@ impl State {
         }
     }
 
+    /// Tries to update the currently playing state every 5 seconds.
     pub(super) async fn get_playing_state(&mut self) {
         if let Ok(playing) = self.client.spotify.current_user_playing_track().await {
             let image_url = playing
@@ -129,6 +129,11 @@ impl State {
 
             self.player.playing = playing;
         }
+    }
+
+    /// Manual currently playing update.
+    pub(super) async fn update_playing_state(&mut self) {
+        self.get_playing_state().await;
     }
 
     pub(super) async fn search(&mut self) {
@@ -168,5 +173,11 @@ impl State {
             }
             _ => {}
         };
+    }
+
+    fn handle_resize(&mut self, x: u16, y: u16) {
+        if self.window_height != y {
+            self.window_height = y;
+        }
     }
 }
