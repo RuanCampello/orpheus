@@ -72,6 +72,15 @@ fn symbol_for_half_width(left: u8, right: u8) -> char {
     }
 }
 
+macro_rules! method_builder {
+    ($name:ident, $ty:ty, $field:ident) => {
+        pub fn $name(mut self, value: $ty) -> Self {
+            self.$field = value;
+            self
+        }
+    };
+}
+
 pub struct Text<'a> {
     pub lines: &'a [&'a Line<'a>],
     pub style: Style,
@@ -80,22 +89,22 @@ pub struct Text<'a> {
 }
 
 impl<'a> Text<'a> {
-    pub fn new(
-        lines: Option<&'a [&'a Line<'a>]>,
-        style: Option<Style>,
-        size: Option<&'a Size>,
-        alignment: Option<Alignment>,
-    ) -> Text<'a> {
+    pub fn new() -> Text<'a> {
         static EMPTY_LINES: &[&Line] = &[];
         static DEFAULT_SIZE: Size = Size::Full;
 
         Text {
-            lines: lines.unwrap_or(EMPTY_LINES),
-            style: style.unwrap_or(Style::default()),
-            size: size.unwrap_or(&DEFAULT_SIZE),
-            alignment: alignment.unwrap_or_default(),
+            lines: EMPTY_LINES,
+            style: Style::default(),
+            size: &DEFAULT_SIZE,
+            alignment: Alignment::Left,
         }
     }
+
+    method_builder!(lines, &'a [&'a Line<'a>], lines);
+    method_builder!(style, Style, style);
+    method_builder!(size, &'a Size, size);
+    method_builder!(alignment, Alignment, alignment);
 }
 
 impl<'a> Widget for Text<'a> {
