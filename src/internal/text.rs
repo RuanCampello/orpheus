@@ -1,4 +1,3 @@
-use derive_builder::Builder;
 use font8x8::UnicodeFonts;
 use ratatui::buffer::Buffer;
 use ratatui::layout::{Alignment, Rect};
@@ -73,33 +72,28 @@ fn symbol_for_half_width(left: u8, right: u8) -> char {
     }
 }
 
-#[derive(Default, Builder)]
-#[builder(build_fn(skip))]
-#[non_exhaustive]
 pub struct Text<'a> {
-    #[builder(default, setter(into))]
-    pub lines: Vec<Line<'a>>,
-    #[builder(default, setter(into))]
+    pub lines: &'a [&'a Line<'a>],
     pub style: Style,
-    #[builder(default)]
-    pub size: Size,
-    #[builder(default)]
+    pub size: &'a Size,
     pub alignment: Alignment,
 }
 
 impl<'a> Text<'a> {
-    pub fn new() -> TextBuilder<'a> {
-        TextBuilder::default()
-    }
-}
+    pub fn new(
+        lines: Option<&'a [&'a Line<'a>]>,
+        style: Option<Style>,
+        size: Option<&'a Size>,
+        alignment: Option<Alignment>,
+    ) -> Text<'a> {
+        static EMPTY_LINES: &[&Line] = &[];
+        static DEFAULT_SIZE: Size = Size::Full;
 
-impl<'a> TextBuilder<'a> {
-    pub fn build(self) -> Text<'a> {
         Text {
-            lines: self.lines.unwrap_or_default(),
-            style: self.style.unwrap_or(Style::default()),
-            size: self.size.unwrap_or_default(),
-            alignment: self.alignment.unwrap_or_default(),
+            lines: lines.unwrap_or(EMPTY_LINES),
+            style: style.unwrap_or(Style::default()),
+            size: size.unwrap_or(&DEFAULT_SIZE),
+            alignment: alignment.unwrap_or_default(),
         }
     }
 }
@@ -122,7 +116,7 @@ fn layout<'a>(
     area: Rect,
     size: &'a Size,
     alignment: Alignment,
-    lines: &'a [Line<'a>],
+    lines: &&'a [&'a Line<'a>],
 ) -> impl IntoIterator<Item = impl IntoIterator<Item = Rect>> + 'a {
     let (x, y) = size.pixels_per_cell();
     let width = 8_u16.div_ceil(x);

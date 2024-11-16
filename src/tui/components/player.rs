@@ -21,16 +21,12 @@ pub fn draw_player<'a>(frame: &'a mut Frame, state: &'a mut State, area: Rect) {
     if let Some(playing) = &state.player.playing {
         let song = playing.item.as_ref().unwrap();
 
-        let lines = vec![Line::from(Span::styled(
+        let lines = &[&Line::from(Span::styled(
             song.name.as_str(),
             Style::new().bold(),
         ))];
 
-        let info = Text::new()
-            .size(Size::HalfWidth)
-            .lines(lines)
-            .to_owned()
-            .build();
+        let info = Text::new(Some(lines), None, Some(&Size::HalfWidth), None);
         frame.render_widget(info, remaining_area);
     }
 }
