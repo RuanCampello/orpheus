@@ -96,10 +96,7 @@ impl<'a> Text<'a> {
 impl<'a> TextBuilder<'a> {
     pub fn build(self) -> Text<'a> {
         Text {
-            lines: match self.lines {
-                Some(lines) => lines,
-                None => Vec::new(),
-            },
+            lines: self.lines.unwrap_or_default(),
             style: self.style.unwrap_or(Style::default()),
             size: self.size.unwrap_or_default(),
             alignment: self.alignment.unwrap_or_default(),

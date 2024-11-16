@@ -1,9 +1,9 @@
-use crate::tui::colours::Palette;
+use crate::internal::text::{Size, Text};
 use crate::tui::components::BlockExt;
 use crate::tui::state::State;
-use ratatui::layout::{Alignment, Constraint, Layout, Rect};
+use ratatui::layout::{Constraint, Layout, Rect};
 use ratatui::style::{Color, Style, Stylize};
-use ratatui::text::{Line, Span, Text};
+use ratatui::text::{Line, Span};
 use ratatui::widgets::{Block, Paragraph};
 use ratatui::Frame;
 
@@ -21,18 +21,16 @@ pub fn draw_player<'a>(frame: &'a mut Frame, state: &'a mut State, area: Rect) {
     if let Some(playing) = &state.player.playing {
         let song = playing.item.as_ref().unwrap();
 
-        let lines = vec![
-            Line::from(Span::styled(song.name.as_str(), Style::new().bold())),
-            Line::from("\n"),
-            Line::from(Span::styled(
-                song.artists.first().unwrap().name.as_str(),
-                Style::new().fg(Palette::Foreground.into()),
-            )),
-        ];
+        let lines = vec![Line::from(Span::styled(
+            song.name.as_str(),
+            Style::new().bold(),
+        ))];
 
-        let info = Paragraph::new(Text::from(lines))
-            .block(Block::new().secondary_border())
-            .alignment(Alignment::Center);
+        let info = Text::new()
+            .size(Size::HalfWidth)
+            .lines(lines)
+            .to_owned()
+            .build();
         frame.render_widget(info, remaining_area);
     }
 }
