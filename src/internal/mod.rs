@@ -1,5 +1,6 @@
 pub mod config;
 pub(super) mod image;
+pub mod text;
 
 use rspotify::client::Spotify;
 use rspotify::oauth2::{SpotifyClientCredentials, SpotifyOAuth, TokenInfo};
