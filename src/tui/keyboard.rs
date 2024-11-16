@@ -42,9 +42,9 @@ impl State {
 
             // search-specific actions
             KeyCode::Esc | KeyCode::Enter | KeyCode::Backspace => {
-                if self.search_state.active {
-                    self.handle_search_control(key).await;
-                }
+                // if self.search_state.active {
+                self.handle_search_control(key).await;
+                // }
             }
 
             _ => {}
@@ -69,7 +69,7 @@ impl State {
     async fn handle_search_control(&mut self, key: KeyCode) {
         match key {
             KeyCode::Esc | KeyCode::Backspace => self.search_state.update(key),
-            KeyCode::Enter => {
+            KeyCode::Enter if self.search_state.active => {
                 self.search().await;
 
                 self.search_state.active = false;
@@ -77,6 +77,7 @@ impl State {
                     songs.table_state.active = true
                 }
             }
+            KeyCode::Enter => self.play_selected_track().await,
             _ => {}
         }
     }

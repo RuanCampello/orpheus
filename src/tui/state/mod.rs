@@ -20,7 +20,7 @@ use std::time::{Duration, Instant};
 
 /// Interface that reflects and calls the client in order to generate the UI.
 pub(crate) struct State {
-    client: Client,
+    pub client: Client,
     user: PrivateUser,
     pub(super) playlist_state: PlaylistState,
     pub(super) search_state: SearchState,
@@ -173,6 +173,49 @@ impl State {
             }
             _ => {}
         };
+    }
+
+    /// Tries to play the currently selected track in the search results.
+    pub(super) async fn play_selected_track(&mut self) {
+        let songs = match &self.search_state.results.songs {
+            Some(songs) => songs,
+            None => return,
+        };
+
+        let context = match self
+            .client
+            .spotify
+            .current_playback(None, None)
+            .await
+            .unwrap_or_default()
+        {
+            Some(context) => context,
+            None => return,
+        };
+
+        let track_idx = songs.table_state.state.selected().unwrap_or(0);
+        let track_uri = match songs.data.items.get(track_idx) {
+            Some(item) => &item.uri,
+            None => return,
+        };
+
+        let context_uri = context.context.as_ref().map(|ctx| &ctx.uri);
+
+        if self
+            .client
+            .spotify
+            .start_playback(
+                Some(context.device.id),
+                context_uri.map(|uri| uri.to_string()),
+                Some(vec![track_uri.to_string()]),
+                None,
+                None,
+            )
+            .await
+            .is_ok()
+        {
+            self.update_playing_state().await;
+        }
     }
 
     fn handle_resize(&mut self, x: u16, y: u16) {
