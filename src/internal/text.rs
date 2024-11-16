@@ -12,6 +12,7 @@ pub enum Size {
     Full,
     HalfHeight,
     HalfWidth,
+    Quarter,
 }
 
 impl Size {
@@ -20,6 +21,7 @@ impl Size {
             Size::Full => (1, 1),
             Size::HalfHeight => (1, 2),
             Size::HalfWidth => (2, 1),
+            Size::Quarter => (2, 2),
         }
     }
 
@@ -41,6 +43,14 @@ impl Size {
                 let right = glyph[row] & 1 << (col + 1);
 
                 symbol_for_half_width(left, right)
+            }
+            Size::Quarter => {
+                let tl = glyph[row] & 1 << col;
+                let tr = glyph[row] & 1 << (col + 1);
+                let bl = glyph[row + 1] & 1 << col;
+                let br = glyph[row + 1] & 1 << (col + 1);
+
+                symbol_for_quarter(tl, tr, bl, br)
             }
         }
     }
@@ -72,6 +82,28 @@ fn symbol_for_half_width(left: u8, right: u8) -> char {
     }
 }
 
+const QUADRANT_SYMBOLS: [char; 16] = [
+    ' ', '▘', '▝', '▀', '▖', '▌', '▞', '▛', '▗', '▚', '▐', '▜', '▄', '▙', '▟', '█',
+];
+
+fn symbol_for_quarter(top_left: u8, top_right: u8, bottom_left: u8, bottom_right: u8) -> char {
+    let tl = get_position_for_value(top_left);
+    let tr = get_position_for_value(top_right);
+    let bl = get_position_for_value(bottom_left);
+    let br = get_position_for_value(bottom_right);
+
+    let char_i = tl + (tr << 1) + (bl << 2) + (br << 3);
+    QUADRANT_SYMBOLS[char_i]
+}
+
+fn get_position_for_value(pos: u8) -> usize {
+    if pos > 0 {
+        1
+    } else {
+        0
+    }
+}
+
 macro_rules! method_builder {
     ($name:ident, $ty:ty, $field:ident) => {
         pub fn $name(mut self, value: $ty) -> Self {
@@ -82,10 +114,10 @@ macro_rules! method_builder {
 }
 
 pub struct Text<'a> {
-    pub lines: &'a [&'a Line<'a>],
-    pub style: Style,
-    pub size: &'a Size,
-    pub alignment: Alignment,
+    lines: &'a [&'a Line<'a>],
+    style: Style,
+    size: &'a Size,
+    alignment: Alignment,
 }
 
 impl<'a> Text<'a> {
@@ -101,6 +133,29 @@ impl<'a> Text<'a> {
         }
     }
 
+    fn layout(
+        &'a self,
+        area: Rect,
+    ) -> impl IntoIterator<Item = impl IntoIterator<Item = Rect>> + 'a {
+        let (x, y) = self.size.pixels_per_cell();
+        let width = 8_u16.div_ceil(x);
+        let height = 8_u16.div_ceil(y);
+
+        (area.top()..area.bottom())
+            .step_by(height as usize)
+            .zip(self.lines.iter())
+            .map(move |(y, l)| {
+                let offset = get_align_offset(area.width, width, self.alignment, l);
+                (area.left() + offset..area.right())
+                    .step_by(width as usize)
+                    .map(move |x| {
+                        let width = min(area.right() - x, width);
+                        let height = min(area.bottom() - y, height);
+                        Rect::new(x, y, width, height)
+                    })
+            })
+    }
+
     method_builder!(lines, &'a [&'a Line<'a>], lines);
     method_builder!(style, Style, style);
     method_builder!(size, &'a Size, size);
@@ -112,38 +167,13 @@ impl<'a> Widget for Text<'a> {
     where
         Self: Sized,
     {
-        let layout = layout(area, &self.size, self.alignment, &self.lines);
+        let layout = self.layout(area);
         for (line, layout_line) in self.lines.iter().zip(layout) {
             for (gr, cell) in line.styled_graphemes(self.style).zip(layout_line) {
-                render_symbol(gr, cell, buf, &self.size);
+                render_symbol(gr, cell, buf, self.size);
             }
         }
     }
-}
-
-fn layout<'a>(
-    area: Rect,
-    size: &'a Size,
-    alignment: Alignment,
-    lines: &&'a [&'a Line<'a>],
-) -> impl IntoIterator<Item = impl IntoIterator<Item = Rect>> + 'a {
-    let (x, y) = size.pixels_per_cell();
-    let width = 8_u16.div_ceil(x);
-    let height = 8_u16.div_ceil(y);
-
-    (area.top()..area.bottom())
-        .step_by(height as usize)
-        .zip(lines.iter())
-        .map(move |(y, l)| {
-            let offset = get_align_offset(area.width, width, alignment, l);
-            (area.left() + offset..area.right())
-                .step_by(width as usize)
-                .map(move |x| {
-                    let width = min(area.right() - x, width);
-                    let height = min(area.bottom() - y, height);
-                    Rect::new(x, y, width, height)
-                })
-        })
 }
 
 fn get_align_offset<'a>(

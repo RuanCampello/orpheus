@@ -26,7 +26,7 @@ pub fn draw_player<'a>(frame: &'a mut Frame, state: &'a mut State, area: Rect) {
             Style::new().bold(),
         ))];
 
-        let info = Text::new().size(&Size::HalfWidth).lines(lines);
+        let info = Text::new().size(&Size::Quarter).lines(lines);
         frame.render_widget(info, remaining_area);
     }
 }
