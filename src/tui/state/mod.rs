@@ -1,7 +1,6 @@
 mod player;
 pub(super) mod search;
 
-use crate::internal::image::image_url_to_ascii;
 use crate::internal::Client;
 use crate::tui::draw;
 use crate::tui::state::player::PlayerState;
@@ -123,9 +122,8 @@ impl State {
                 })
                 .unwrap_or("default_image_url");
 
-            if let Ok(ascii) = image_url_to_ascii(image_url, &self.window_height) {
-                self.player.update_current_image(image_url, ascii);
-            }
+            self.player
+                .update_current_image(image_url, &self.window_height);
 
             self.player.playing = playing;
         }
@@ -182,16 +180,16 @@ impl State {
             None => return,
         };
 
-        let (_ctx_uri, _dev_id) = match self.client.spotify.current_playback(None, None).await {
-            Ok(ctx_opt) => match ctx_opt {
-                Some(playback_ctx) => match playback_ctx.context {
-                    Some(ctx) => (Some(ctx.uri), Some(playback_ctx.device.id)),
-                    None => (None, Some(playback_ctx.device.id)),
-                },
-                None => return,
-            },
-            Err(_) => return,
-        };
+        // let (_ctx_uri, _dev_id) = match self.client.spotify.current_playback(None, None).await {
+        //     Ok(ctx_opt) => match ctx_opt {
+        //         Some(playback_ctx) => match playback_ctx.context {
+        //             Some(ctx) => (Some(ctx.uri), Some(playback_ctx.device.id)),
+        //             None => (None, Some(playback_ctx.device.id)),
+        //         },
+        //         None => return,
+        //     },
+        //     Err(_) => return,
+        // };
 
         // TODO: why does when using ctx+device_id not working?
         let track_idx = songs.table_state.state.selected();

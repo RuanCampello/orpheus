@@ -1,3 +1,4 @@
+use crate::internal::image::image_url_to_ascii;
 use rspotify::model::playing::Playing;
 
 #[derive(Debug)]
@@ -20,7 +21,7 @@ impl PlayerState {
         }
     }
 
-    pub fn update_current_image(&mut self, url: &str, ascii: String) {
+    pub fn update_current_image(&mut self, url: &str, height: &u16) {
         if let Some(current_image) = &self.image {
             if current_image.image_url == url {
                 return;
@@ -28,18 +29,8 @@ impl PlayerState {
         }
 
         self.image = Some(Image {
-            ascii,
+            ascii: image_url_to_ascii(url, height).unwrap_or_default(),
             image_url: url.to_string(),
         });
-    }
-
-    pub fn get_context_uri(&self) -> Option<String> {
-        if let Some(playing) = &self.playing {
-            if let Some(ctx) = &playing.context {
-                return Some(ctx.uri.to_string());
-            }
-        }
-
-        None
     }
 }
