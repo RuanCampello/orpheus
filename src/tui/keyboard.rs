@@ -42,9 +42,7 @@ impl State {
 
             // search-specific actions
             KeyCode::Esc | KeyCode::Enter | KeyCode::Backspace => {
-                // if self.search_state.active {
                 self.handle_search_control(key).await;
-                // }
             }
 
             _ => {}

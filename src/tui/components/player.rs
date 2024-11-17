@@ -12,7 +12,7 @@ pub fn draw_player<'a>(frame: &'a mut Frame, state: &'a mut State, area: Rect) {
         Layout::vertical([Constraint::Percentage(50), Constraint::Min(0)]).areas(area);
 
     if let Some(image) = &state.player.image {
-        let image = Paragraph::new(image.to_string())
+        let image = Paragraph::new(image.ascii.to_string())
             .block(Block::new().secondary_border())
             .style(Style::new().fg(Color::White));
         frame.render_widget(image, image_area);

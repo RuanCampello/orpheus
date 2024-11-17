@@ -124,7 +124,7 @@ impl State {
                 .unwrap_or("default_image_url");
 
             if let Ok(ascii) = image_url_to_ascii(image_url, &self.window_height) {
-                self.player.image = Some(ascii)
+                self.player.update_current_image(image_url, ascii);
             }
 
             self.player.playing = playing;
@@ -178,47 +178,43 @@ impl State {
     /// Tries to play the currently selected track in the search results.
     pub(super) async fn play_selected_track(&mut self) {
         let songs = match &self.search_state.results.songs {
-            Some(songs) => songs,
+            Some(s) => s,
             None => return,
         };
 
-        let context = match self
-            .client
-            .spotify
-            .current_playback(None, None)
-            .await
-            .unwrap_or_default()
-        {
-            Some(context) => context,
-            None => return,
+        let (_ctx_uri, _dev_id) = match self.client.spotify.current_playback(None, None).await {
+            Ok(ctx_opt) => match ctx_opt {
+                Some(playback_ctx) => match playback_ctx.context {
+                    Some(ctx) => (Some(ctx.uri), Some(playback_ctx.device.id)),
+                    None => (None, Some(playback_ctx.device.id)),
+                },
+                None => return,
+            },
+            Err(_) => return,
         };
 
-        let track_idx = songs.table_state.state.selected().unwrap_or(0);
-        let track_uri = match songs.data.items.get(track_idx) {
-            Some(item) => &item.uri,
-            None => return,
-        };
-
-        let context_uri = context.context.as_ref().map(|ctx| &ctx.uri);
-
-        if self
-            .client
-            .spotify
-            .start_playback(
-                Some(context.device.id),
-                context_uri.map(|uri| uri.to_string()),
-                Some(vec![track_uri.to_string()]),
-                None,
-                None,
-            )
-            .await
-            .is_ok()
-        {
-            self.update_playing_state().await;
+        // TODO: why does when using ctx+device_id not working?
+        let track_idx = songs.table_state.state.selected();
+        if let Some(track_uri) = songs.data.items.get(track_idx.unwrap_or(0)) {
+            if (self
+                .client
+                .spotify
+                .start_playback(
+                    None,
+                    None,
+                    Some(vec![track_uri.uri.to_string()]),
+                    None,
+                    None,
+                )
+                .await)
+                .is_ok()
+            {
+                self.update_playing_state().await
+            };
         }
     }
 
-    fn handle_resize(&mut self, x: u16, y: u16) {
+    fn handle_resize(&mut self, _x: u16, y: u16) {
         if self.window_height != y {
             self.window_height = y;
         }
