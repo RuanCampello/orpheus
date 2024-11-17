@@ -1,6 +1,7 @@
 mod player;
 pub(super) mod search;
 
+use crate::internal::config::Config;
 use crate::internal::Client;
 use crate::tui::draw;
 use crate::tui::state::player::PlayerState;
@@ -21,6 +22,8 @@ use std::time::{Duration, Instant};
 pub(crate) struct State {
     pub client: Client,
     user: PrivateUser,
+    config: Config,
+
     pub(super) playlist_state: PlaylistState,
     pub(super) search_state: SearchState,
     pub(super) should_quit: bool,
@@ -46,7 +49,7 @@ impl PlaylistState {
 }
 
 impl State {
-    pub async fn new(client: Client) -> Self {
+    pub async fn new(client: Client, config: Config) -> Self {
         let user_future = client.spotify.current_user();
         let playlists_future = client.spotify.current_user_playlists(50, 0);
 
@@ -61,6 +64,7 @@ impl State {
 
         Self {
             client,
+            config,
             user,
             playlist_state,
             player: PlayerState::new(),
@@ -180,34 +184,25 @@ impl State {
             None => return,
         };
 
-        // let (_ctx_uri, _dev_id) = match self.client.spotify.current_playback(None, None).await {
-        //     Ok(ctx_opt) => match ctx_opt {
-        //         Some(playback_ctx) => match playback_ctx.context {
-        //             Some(ctx) => (Some(ctx.uri), Some(playback_ctx.device.id)),
-        //             None => (None, Some(playback_ctx.device.id)),
-        //         },
-        //         None => return,
-        //     },
-        //     Err(_) => return,
-        // };
-
         // TODO: why does when using ctx+device_id not working?
+
+        let device_id = self.config.device_id.take();
         let track_idx = songs.table_state.state.selected();
         if let Some(track_uri) = songs.data.items.get(track_idx.unwrap_or(0)) {
-            if (self
+            match &self
                 .client
                 .spotify
                 .start_playback(
-                    None,
+                    device_id,
                     None,
                     Some(vec![track_uri.uri.to_string()]),
                     None,
                     None,
                 )
-                .await)
-                .is_ok()
+                .await
             {
-                self.update_playing_state().await
+                Ok(_) => self.update_playing_state().await,
+                Err(e) => eprintln!("Something went wrong {e:?}"),
             };
         }
     }

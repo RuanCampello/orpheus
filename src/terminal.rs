@@ -1,3 +1,4 @@
+use crate::internal::config::Config;
 use crate::internal::Client;
 use crate::tui::state::State;
 use ratatui::backend::CrosstermBackend;
@@ -13,7 +14,11 @@ use std::io;
 use std::time::Duration;
 
 /// Starts the native terminal.
-pub async fn run(tick_rate: Duration, client: Client) -> Result<(), Box<dyn std::error::Error>> {
+pub async fn run(
+    tick_rate: Duration,
+    client: Client,
+    config: Config,
+) -> Result<(), Box<dyn std::error::Error>> {
     enable_raw_mode()?;
 
     let mut stdout = io::stdout();
@@ -21,7 +26,7 @@ pub async fn run(tick_rate: Duration, client: Client) -> Result<(), Box<dyn std:
     let backend = CrosstermBackend::new(stdout);
     let mut terminal = Terminal::new(backend)?;
 
-    let mut app = State::new(client).await;
+    let mut app = State::new(client, config).await;
     let app_res = app.run(&mut terminal, tick_rate).await;
 
     disable_raw_mode()?;

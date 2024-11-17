@@ -13,6 +13,7 @@ pub enum Size {
     HalfHeight,
     HalfWidth,
     Quarter,
+    Sixth,
 }
 
 impl Size {
@@ -22,6 +23,7 @@ impl Size {
             Size::HalfHeight => (1, 2),
             Size::HalfWidth => (2, 1),
             Size::Quarter => (2, 2),
+            Size::Sixth => (2, 3),
         }
     }
 
@@ -51,6 +53,24 @@ impl Size {
                 let br = glyph[row + 1] & 1 << (col + 1);
 
                 symbol_for_quarter(tl, tr, bl, br)
+            }
+            Size::Sixth => {
+                let tl = glyph[row] & 1 << col;
+                let tr = glyph[row] & 1 << (col + 1);
+
+                let (mid_l, mid_r) = if (row + 1) < glyph.len() {
+                    (glyph[row + 1] & 1 << col, glyph[row + 1] << (col + 1))
+                } else {
+                    (0, 0)
+                };
+
+                let (bl, br) = if (row + 2) < glyph.len() {
+                    (glyph[row + 2] & 1 << col, glyph[row + 2] & 1 << (col + 1))
+                } else {
+                    (0, 0)
+                };
+
+                symbol_for_sixth(tl, tr, mid_l, mid_r, bl, br)
             }
         }
     }
@@ -102,6 +122,33 @@ fn get_position_for_value(pos: u8) -> usize {
     } else {
         0
     }
+}
+
+const SIXTH_SYMBOLS: [char; 64] = [
+    ' ', '🬀', '🬁', '🬂', '🬃', '🬄', '🬅', '🬆', '🬇', '🬈', '🬉', '🬊', '🬋', '🬌', '🬍', '🬎', '🬏', '🬐', '🬑',
+    '🬒', '🬓', '▌', '🬔', '🬕', '🬖', '🬗', '🬘', '🬙', '🬚', '🬛', '🬜', '🬝', '🬞', '🬟', '🬠', '🬡', '🬢', '🬣',
+    '🬤', '🬥', '🬦', '🬧', '▐', '🬨', '🬩', '🬪', '🬫', '🬬', '🬭', '🬮', '🬯', '🬰', '🬱', '🬲', '🬳', '🬴', '🬵',
+    '🬶', '🬷', '🬸', '🬹', '🬺', '🬻', '█',
+];
+
+fn symbol_for_sixth(
+    top_left: u8,
+    top_right: u8,
+    mid_left: u8,
+    mid_right: u8,
+    bottom_left: u8,
+    bottom_right: u8,
+) -> char {
+    let tl = get_position_for_value(top_left);
+    let tr = get_position_for_value(top_right);
+    let ml = get_position_for_value(mid_left);
+    let mr = get_position_for_value(mid_right);
+    let bl = get_position_for_value(bottom_left);
+    let br = get_position_for_value(bottom_right);
+
+    let char_i = tl + (tr << 1) + (ml << 2) + (mr << 3) + (bl << 4) + (br << 5);
+
+    SIXTH_SYMBOLS[char_i]
 }
 
 macro_rules! method_builder {

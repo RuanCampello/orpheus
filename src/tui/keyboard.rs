@@ -65,9 +65,11 @@ impl State {
     }
 
     async fn handle_search_control(&mut self, key: KeyCode) {
+        let active = self.search_state.active;
+
         match key {
-            KeyCode::Esc | KeyCode::Backspace => self.search_state.update(key),
-            KeyCode::Enter if self.search_state.active => {
+            KeyCode::Esc | KeyCode::Backspace if active => self.search_state.update(key),
+            KeyCode::Enter if active => {
                 self.search().await;
 
                 self.search_state.active = false;

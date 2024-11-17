@@ -8,7 +8,6 @@ pub(crate) fn image_url_to_ascii<'a>(
     url: &'a str,
     window_height: &'a u16,
 ) -> Result<String, Box<dyn std::error::Error>> {
-    println!("triggered");
     let response = reqwest::blocking::get(url)?;
     let image_data = response.bytes()?;
 

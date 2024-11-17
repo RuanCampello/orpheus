@@ -26,7 +26,7 @@ const SCOPES: [&str; 14] = [
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let client_config = Config::new();
+    let mut client_config = Config::new();
 
     let mut oauth = SpotifyOAuth::default()
         .client_id(&client_config.client_id)
@@ -39,12 +39,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     match get_token(&mut oauth, client_config.get_port()).await {
         Some(token_info) => {
-            println!("TOKEN {token_info:?}");
-
             let (spotify, exp) = get_spotify(token_info);
+            if let Ok(dev) = spotify.device().await {
+                client_config.set_default_device(dev);
+            }
+
             let client = Client::new(spotify, oauth);
 
-            terminal::run(tick_rate, client).await?;
+            terminal::run(tick_rate, client, client_config).await?;
         }
         None => println!("Failed to authorize Spotify"),
     };

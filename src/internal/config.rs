@@ -1,7 +1,11 @@
+use rspotify::model::device::DevicePayload;
+
 pub struct Config {
     pub client_id: String,
     pub client_secret: String,
     pub port: Option<u16>,
+
+    pub device_id: Option<String>,
 }
 
 const PORT: u16 = 8888;
@@ -20,6 +24,13 @@ impl Config {
             client_id,
             client_secret,
             port: Some(port),
+            device_id: None,
+        }
+    }
+
+    pub fn set_default_device(&mut self, payload: DevicePayload) {
+        if let Some(dev) = payload.devices.into_iter().next() {
+            self.device_id = Some(dev.id);
         }
     }
 
