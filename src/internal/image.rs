@@ -7,6 +7,7 @@ const ASCII_CHARS: &[u8] = b"#+=-|:. ";
 pub(crate) fn image_url_to_ascii<'a>(
     url: &'a str,
     window_height: &'a u16,
+    window_width: &'a u16,
 ) -> Result<String, Box<dyn std::error::Error>> {
     let response = reqwest::blocking::get(url)?;
     let image_data = response.bytes()?;
@@ -15,10 +16,10 @@ pub(crate) fn image_url_to_ascii<'a>(
         .with_guessed_format()?
         .decode()?;
 
-    let window_height = *window_height as u32 - 5;
+    let window_width = *window_width as u32 / 4;
+    let window_height = *window_height as u32 / 2; 
 
-    let height = ((window_height * image.height()) / (image.width() * 2)).max(1);
-    image = image.resize_exact(window_height, height, FilterType::Nearest);
+    image = image.resize_exact(window_width, window_height, FilterType::Nearest);
 
     let ascii_string = image_to_ascii(&image);
 

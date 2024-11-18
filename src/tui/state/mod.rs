@@ -28,7 +28,13 @@ pub(crate) struct State {
     pub(super) search_state: SearchState,
     pub(super) should_quit: bool,
     pub(super) player: PlayerState,
-    window_height: u16,
+
+    window: WindowSize,
+}
+
+struct WindowSize {
+    height: u16,
+    width: u16,
 }
 
 pub(super) struct PlaylistState {
@@ -70,7 +76,10 @@ impl State {
             player: PlayerState::new(),
             search_state: SearchState::new(),
             should_quit: false,
-            window_height: 55,
+            window: WindowSize {
+                height: 20,
+                width: 20,
+            },
         }
     }
 
@@ -91,9 +100,9 @@ impl State {
             let timeout = tick_rate.saturating_sub(last_tick.elapsed());
             if event::poll(timeout)? {
                 match event::read()? {
-                    Event::Key(key) => self.handle_key(key.code).await,
                     Event::Resize(x, y) => self.handle_resize(x, y),
-                    _ => {}
+                    Event::Key(key) => self.handle_key(key.code).await,
+                    _ => continue,
                 }
             }
 
@@ -127,7 +136,7 @@ impl State {
                 .unwrap_or("default_image_url");
 
             self.player
-                .update_current_image(image_url, self.window_height);
+                .update_current_image(image_url, self.window.height, self.window.width);
 
             self.player.playing = playing;
         }
@@ -207,9 +216,8 @@ impl State {
         }
     }
 
-    fn handle_resize(&mut self, _x: u16, y: u16) {
-        if self.window_height != y {
-            self.window_height = y;
-        }
+    fn handle_resize(&mut self, x: u16, y: u16) {
+        self.window.height = y;
+        self.window.width = x;
     }
 }
