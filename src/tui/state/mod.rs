@@ -77,8 +77,8 @@ impl State {
             search_state: SearchState::new(),
             should_quit: false,
             window: WindowSize {
-                height: 20,
-                width: 20,
+                height: 37,
+                width: 230,
             },
         }
     }
@@ -93,6 +93,11 @@ impl State {
 
         // fetches the currently playing state on the launch.
         self.update_playing_state().await;
+
+        // updates the window size on first launch.
+        let size = terminal.size()?;
+        self.window.width = size.width;
+        self.window.height = size.height - 7;
 
         loop {
             terminal.draw(|frame| draw(frame, self))?;

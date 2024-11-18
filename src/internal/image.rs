@@ -17,7 +17,7 @@ pub(crate) fn image_url_to_ascii<'a>(
         .decode()?;
 
     let window_width = *window_width as u32 / 4;
-    let window_height = *window_height as u32 / 2; 
+    let window_height = *window_height as u32 / 2;
 
     image = image.resize_exact(window_width, window_height, FilterType::Nearest);
 
