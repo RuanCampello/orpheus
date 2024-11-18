@@ -92,20 +92,50 @@ impl State {
     /// Handles navigation on playlist page.
     async fn control_playlist(&mut self, key: KeyCode) {
         if let Some(selected_playlist) = &mut self.playlist_state.selected_playlist {
-            self.playlist_state.offset += 10;
+            let uri = &selected_playlist.uri;
+            let offset_step = self.window.height.saturating_sub(8) as u32;
+            // println!("{offset_step}");
+
             match key {
-                KeyCode::Left => {
-                    let uri = &selected_playlist.uri;
+                KeyCode::Right => {
+                    self.playlist_state.offset += offset_step;
+
                     if let Ok(playlist) = self
                         .client
                         .spotify
-                        .user_playlist_tracks("spotify", uri, None, None, Some(self.playlist_state.offset), None)
+                        .user_playlist_tracks(
+                            "spotify",
+                            uri,
+                            None,
+                            None,
+                            Some(self.playlist_state.offset),
+                            None,
+                        )
                         .await
                     {
                         selected_playlist.tracks = playlist;
                     }
                 }
-                KeyCode::Right => {}
+                KeyCode::Left => {
+                    self.playlist_state.offset =
+                        self.playlist_state.offset.saturating_sub(offset_step);
+
+                    if let Ok(playlist) = self
+                        .client
+                        .spotify
+                        .user_playlist_tracks(
+                            "spotify",
+                            uri,
+                            None,
+                            None,
+                            Some(self.playlist_state.offset),
+                            None,
+                        )
+                        .await
+                    {
+                        selected_playlist.tracks = playlist;
+                    }
+                }
                 _ => {}
             }
         }

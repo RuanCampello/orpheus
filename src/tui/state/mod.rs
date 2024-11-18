@@ -29,12 +29,12 @@ pub(crate) struct State {
     pub(super) should_quit: bool,
     pub(super) player: PlayerState,
 
-    window: WindowSize,
+    pub(in crate::tui) window: WindowSize,
 }
 
-struct WindowSize {
-    height: u16,
-    width: u16,
+pub(in crate::tui) struct WindowSize {
+    pub height: u16,
+    pub width: u16,
 }
 
 pub(super) struct PlaylistState {
@@ -54,7 +54,7 @@ impl PlaylistState {
             selected_playlist: None,
             state,
             active: false,
-            offset: 0
+            offset: 0,
         }
     }
 }
@@ -82,7 +82,7 @@ impl State {
             search_state: SearchState::new(),
             should_quit: false,
             window: WindowSize {
-                height: 37,
+                height: 43,
                 width: 230,
             },
         }
@@ -98,11 +98,12 @@ impl State {
 
         // fetches the currently playing state on the launch.
         self.update_playing_state().await;
+        
 
         // updates the window size on first launch.
         let size = terminal.size()?;
         self.window.width = size.width;
-        self.window.height = size.height - 7;
+        self.window.height = size.height;
 
         loop {
             terminal.draw(|frame| draw(frame, self))?;

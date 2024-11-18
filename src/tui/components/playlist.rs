@@ -20,6 +20,9 @@ impl<'a> ToRow<'a> for PlaylistTrack {
 
         let artists = self
             .track
+            .as_ref()
+            .unwrap()
+            .artists
             .iter()
             .take(3)
             .map(|artist| artist.name.as_str())
@@ -57,7 +60,12 @@ pub fn draw_playlists_sidebar<'a>(frame: &'a mut Frame, state: &'a mut State, ar
     frame.render_stateful_widget(playlists, area, &mut state.playlist_state.state);
 }
 
-pub fn draw_playlist_screen<'a>(frame: &'a mut Frame, playlist: &'a FullPlaylist, offset: u32, area: Rect) {
+pub fn draw_playlist_screen<'a>(
+    frame: &'a mut Frame,
+    playlist: &'a FullPlaylist,
+    offset: u32,
+    area: Rect,
+) {
     const WIDTHS: &[Constraint] = &[
         Constraint::Length(5),
         Constraint::Percentage(40),
@@ -73,7 +81,7 @@ pub fn draw_playlist_screen<'a>(frame: &'a mut Frame, playlist: &'a FullPlaylist
         WIDTHS,
         false,
         HEADERS,
-        Some(offset)
+        Some(offset),
     );
 
     frame.render_widget(playlist_table, area);
