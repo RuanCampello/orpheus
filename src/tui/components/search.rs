@@ -11,7 +11,7 @@ use rspotify::model::track::FullTrack;
 use std::time::Duration;
 
 impl<'a> ToRow<'a> for FullTrack {
-    fn to_row(&self) -> Row<'a> {
+    fn to_row(&self, _idx: usize) -> Row<'a> {
         let duration = Duration::from_millis(self.duration_ms as u64);
         let minutes = duration.as_secs() / 60;
         let seconds = duration.as_secs() % 60;
@@ -30,7 +30,7 @@ impl<'a> ToRow<'a> for FullTrack {
 }
 
 impl<'a> ToRow<'a> for SimplifiedAlbum {
-    fn to_row(&self) -> Row<'a> {
+    fn to_row(&self, _idx: usize) -> Row<'a> {
         let artists = self
             .artists
             .iter()
@@ -44,7 +44,7 @@ impl<'a> ToRow<'a> for SimplifiedAlbum {
 }
 
 impl<'a> ToRow<'a> for FullArtist {
-    fn to_row(&self) -> Row<'a> {
+    fn to_row(&self, _idx: usize) -> Row<'a> {
         Row::new(vec![self.name.to_string()])
     }
 }
@@ -87,6 +87,7 @@ pub fn draw_search_results(frame: &mut Frame, state: &mut State, area: Rect) {
             WIDTHS,
             songs.table_state.active,
             HEADERS,
+            None,
         );
 
         frame.render_stateful_widget(songs_table, songs_area, &mut songs.table_state.state);
@@ -102,13 +103,14 @@ pub fn draw_search_results(frame: &mut Frame, state: &mut State, area: Rect) {
             WIDTHS,
             albums.table_state.active,
             HEADERS,
+            None,
         );
 
         frame.render_stateful_widget(albums_table, albums_area, &mut albums.table_state.state);
     }
 
     if let Some(artists) = &mut state.search_state.results.artists {
-        const HEADERS: [&str; 1] = ["Name"];
+        const HEADERS: &[&str; 1] = &["Name"];
         const WIDTHS: &[Constraint] = &[Constraint::Length(50)];
 
         let artists_table = draw_results_table(
@@ -116,7 +118,8 @@ pub fn draw_search_results(frame: &mut Frame, state: &mut State, area: Rect) {
             "Artists",
             WIDTHS,
             artists.table_state.active,
-            &HEADERS,
+            HEADERS,
+            None,
         );
 
         frame.render_stateful_widget(artists_table, artists_area, &mut artists.table_state.state);
@@ -129,8 +132,13 @@ pub(super) fn draw_results_table<'a, T: ToRow<'a> + 'a>(
     widths: &[Constraint],
     active: bool,
     headers: &'a [&'a str],
+    offset: Option<u32>,
 ) -> Table<'a> {
-    let rows: Vec<Row> = items.iter().map(|item| item.to_row()).collect();
+    let rows: Vec<Row> = items
+        .iter()
+        .enumerate()
+        .map(|(idx, item)| item.to_row(idx + 1 + offset.unwrap_or(0) as usize))
+        .collect();
 
     Table::new(rows, widths)
         .row_highlight_style(match active {

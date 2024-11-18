@@ -40,6 +40,7 @@ struct WindowSize {
 pub(super) struct PlaylistState {
     pub playlists: Vec<SimplifiedPlaylist>,
     pub selected_playlist: Option<FullPlaylist>,
+    pub offset: u32,
     pub state: ListState,
     pub active: bool,
 }
@@ -47,12 +48,13 @@ pub(super) struct PlaylistState {
 impl PlaylistState {
     fn new(playlists: Vec<SimplifiedPlaylist>) -> Self {
         let state = ListState::default().with_selected(Some(0));
-        
+
         Self {
             playlists,
             selected_playlist: None,
             state,
             active: false,
+            offset: 0
         }
     }
 }

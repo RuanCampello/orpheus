@@ -33,10 +33,15 @@ impl Navigable for PlaylistState {
 
 impl State {
     pub(super) async fn handle_key(&mut self, key: KeyCode) {
+        let on_playlist_sidebar = self.playlist_state.active;
+
         match key {
             // navigation keys
-            KeyCode::Up | KeyCode::Down | KeyCode::Enter if self.playlist_state.active => {
+            KeyCode::Up | KeyCode::Down | KeyCode::Enter if on_playlist_sidebar => {
                 self.navigate(key).await;
+            }
+            KeyCode::Left | KeyCode::Right if !on_playlist_sidebar => {
+                self.control_playlist(key).await;
             }
 
             // character-specific actions
@@ -81,6 +86,28 @@ impl State {
             }
             KeyCode::Enter => self.play_selected_track().await,
             _ => {}
+        }
+    }
+
+    /// Handles navigation on playlist page.
+    async fn control_playlist(&mut self, key: KeyCode) {
+        if let Some(selected_playlist) = &mut self.playlist_state.selected_playlist {
+            self.playlist_state.offset += 10;
+            match key {
+                KeyCode::Left => {
+                    let uri = &selected_playlist.uri;
+                    if let Ok(playlist) = self
+                        .client
+                        .spotify
+                        .user_playlist_tracks("spotify", uri, None, None, Some(self.playlist_state.offset), None)
+                        .await
+                    {
+                        selected_playlist.tracks = playlist;
+                    }
+                }
+                KeyCode::Right => {}
+                _ => {}
+            }
         }
     }
 

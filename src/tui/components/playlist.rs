@@ -9,7 +9,7 @@ use rspotify::model::playlist::{FullPlaylist, PlaylistTrack};
 use std::time::Duration;
 
 impl<'a> ToRow<'a> for PlaylistTrack {
-    fn to_row(&self) -> Row<'a> {
+    fn to_row(&self, idx: usize) -> Row<'a> {
         let track = self.track.as_ref().unwrap();
         let album = &track.album.name;
 
@@ -27,6 +27,7 @@ impl<'a> ToRow<'a> for PlaylistTrack {
             .join(", ");
 
         Row::new(vec![
+            idx.to_string(),
             track.name.to_string(),
             artists,
             album.to_string(),
@@ -56,14 +57,15 @@ pub fn draw_playlists_sidebar<'a>(frame: &'a mut Frame, state: &'a mut State, ar
     frame.render_stateful_widget(playlists, area, &mut state.playlist_state.state);
 }
 
-pub fn draw_playlist_screen<'a>(frame: &'a mut Frame, playlist: &'a FullPlaylist, area: Rect) {
+pub fn draw_playlist_screen<'a>(frame: &'a mut Frame, playlist: &'a FullPlaylist, offset: u32, area: Rect) {
     const WIDTHS: &[Constraint] = &[
+        Constraint::Length(5),
         Constraint::Percentage(40),
         Constraint::Percentage(25),
         Constraint::Min(5),
         Constraint::Length(5),
     ];
-    const HEADERS: &[&str; 4] = &["Title", "Artist", "Album", "Time"];
+    const HEADERS: &[&str; 5] = &["#", "Title", "Artist", "Album", "Time"];
 
     let playlist_table = draw_results_table(
         &playlist.tracks.items,
@@ -71,6 +73,7 @@ pub fn draw_playlist_screen<'a>(frame: &'a mut Frame, playlist: &'a FullPlaylist
         WIDTHS,
         false,
         HEADERS,
+        Some(offset)
     );
 
     frame.render_widget(playlist_table, area);

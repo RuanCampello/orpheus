@@ -12,7 +12,7 @@ pub(self) fn pad<'a>(content: &'a str, size: usize) -> String {
 }
 
 trait ToRow<'a> {
-    fn to_row(&self) -> Row<'a>;
+    fn to_row(&self, idx: usize) -> Row<'a>;
 }
 
 trait BlockExt {

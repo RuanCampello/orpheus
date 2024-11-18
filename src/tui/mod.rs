@@ -25,7 +25,7 @@ fn draw(frame: &mut Frame, state: &mut State) {
 
     match &state.playlist_state.selected_playlist {
         None => draw_search_results(frame, state, main_area),
-        Some(playlist) => draw_playlist_screen(frame, playlist, main_area),
+        Some(playlist) => draw_playlist_screen(frame, playlist, state.playlist_state.offset, main_area),
     }
 
     draw_playlists_sidebar(frame, state, playlist_area);
