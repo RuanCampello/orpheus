@@ -10,7 +10,7 @@ use ratatui::backend::CrosstermBackend;
 use ratatui::crossterm::event::{self, Event};
 use ratatui::widgets::ListState;
 use ratatui::Terminal;
-use rspotify::model::playlist::SimplifiedPlaylist;
+use rspotify::model::playlist::{FullPlaylist, SimplifiedPlaylist};
 use rspotify::model::search::SearchResult;
 use rspotify::model::user::PrivateUser;
 use rspotify::senum::SearchType;
@@ -39,6 +39,7 @@ struct WindowSize {
 
 pub(super) struct PlaylistState {
     pub playlists: Vec<SimplifiedPlaylist>,
+    pub selected_playlist: Option<FullPlaylist>,
     pub state: ListState,
     pub active: bool,
 }
@@ -46,8 +47,10 @@ pub(super) struct PlaylistState {
 impl PlaylistState {
     fn new(playlists: Vec<SimplifiedPlaylist>) -> Self {
         let state = ListState::default().with_selected(Some(0));
+        
         Self {
             playlists,
+            selected_playlist: None,
             state,
             active: false,
         }

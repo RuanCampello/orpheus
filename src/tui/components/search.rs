@@ -1,5 +1,5 @@
 use crate::tui::colours::Palette;
-use crate::tui::components::{pad, BlockExt};
+use crate::tui::components::{pad, BlockExt, ToRow};
 use crate::tui::state::State;
 use ratatui::layout::{Alignment, Constraint, Layout, Position, Rect};
 use ratatui::style::{Style, Stylize};
@@ -9,10 +9,6 @@ use rspotify::model::album::SimplifiedAlbum;
 use rspotify::model::artist::FullArtist;
 use rspotify::model::track::FullTrack;
 use std::time::Duration;
-
-trait ToRow<'a> {
-    fn to_row(&self) -> Row<'a>;
-}
 
 impl<'a> ToRow<'a> for FullTrack {
     fn to_row(&self) -> Row<'a> {
@@ -77,62 +73,62 @@ pub fn draw_search_results(frame: &mut Frame, state: &mut State, area: Rect) {
             .areas(lower_area);
 
     if let Some(songs) = &mut state.search_state.results.songs {
-        let songs_widths = &[
+        const WIDTHS: &[Constraint] = &[
             Constraint::Percentage(40),
             Constraint::Percentage(25),
             Constraint::Percentage(15),
             Constraint::Length(5),
         ];
-        let headers: Vec<&str> = vec!["Title", "Artist", "Album", "Time"];
+        const HEADERS: &[&str; 4] = &["Title", "Artist", "Album", "Time"];
 
         let songs_table = draw_results_table(
             &songs.data.items,
             "Songs",
-            songs_widths,
+            WIDTHS,
             songs.table_state.active,
-            headers,
+            HEADERS,
         );
 
         frame.render_stateful_widget(songs_table, songs_area, &mut songs.table_state.state);
     }
 
     if let Some(albums) = &mut state.search_state.results.albums {
-        let albums_widths = &[Constraint::Length(40), Constraint::Length(25)];
-        let headers: Vec<&str> = vec!["Title", "Artist"];
+        const WIDTHS: &[Constraint] = &[Constraint::Length(40), Constraint::Length(25)];
+        const HEADERS: &[&str; 2] = &["Title", "Artist"];
 
         let albums_table = draw_results_table(
             &albums.data.items,
             "Albums",
-            albums_widths,
+            WIDTHS,
             albums.table_state.active,
-            headers,
+            HEADERS,
         );
 
         frame.render_stateful_widget(albums_table, albums_area, &mut albums.table_state.state);
     }
 
     if let Some(artists) = &mut state.search_state.results.artists {
-        let headers: Vec<&str> = vec!["Name"];
+        const HEADERS: [&str; 1] = ["Name"];
+        const WIDTHS: &[Constraint] = &[Constraint::Length(50)];
 
-        let artist_widths = &[Constraint::Length(50)];
         let artists_table = draw_results_table(
             &artists.data.items,
             "Artists",
-            artist_widths,
+            WIDTHS,
             artists.table_state.active,
-            headers,
+            &HEADERS,
         );
 
         frame.render_stateful_widget(artists_table, artists_area, &mut artists.table_state.state);
     }
 }
 
-fn draw_results_table<'a, T: ToRow<'a> + 'a>(
+pub(super) fn draw_results_table<'a, T: ToRow<'a> + 'a>(
     items: &[T],
     title: &'a str,
     widths: &[Constraint],
     active: bool,
-    headers: Vec<&'a str>,
+    headers: &'a [&'a str],
 ) -> Table<'a> {
     let rows: Vec<Row> = items.iter().map(|item| item.to_row()).collect();
 
@@ -141,7 +137,7 @@ fn draw_results_table<'a, T: ToRow<'a> + 'a>(
             true => Style::new().bg(Palette::Secondary.into()).bold(),
             false => Style::new().bg(Palette::Foreground.into()).bold(),
         })
-        .header(Row::new(headers))
+        .header(Row::new(headers.to_vec()))
         .column_spacing(2)
         .block(
             Block::bordered()

@@ -75,15 +75,11 @@ fn redirect_to_authorize(spotify_oauth: &mut SpotifyOAuth, port: u16) -> Result<
                             return Ok(url);
                         }
                     }
-                    Err(e) => {
-                        println!("Error: {}", e);
-                    }
+                    Err(e) => println!("Error: {}", e),
                 };
             }
         }
-        Err(e) => {
-            println!("Error: {}", e);
-        }
+        Err(e) => println!("Error: {}", e),
     }
 
     Err(())

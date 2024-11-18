@@ -35,7 +35,9 @@ impl State {
     pub(super) async fn handle_key(&mut self, key: KeyCode) {
         match key {
             // navigation keys
-            KeyCode::Up | KeyCode::Down => self.navigate(key),
+            KeyCode::Up | KeyCode::Down | KeyCode::Enter if self.playlist_state.active => {
+                self.navigate(key).await;
+            }
 
             // character-specific actions
             KeyCode::Char(c) => self.handle_character(c),
@@ -82,9 +84,25 @@ impl State {
         }
     }
 
-    fn navigate(&mut self, key: KeyCode) {
+    async fn navigate(&mut self, key: KeyCode) {
         if self.playlist_state.active {
-            Self::update_navigation(&mut self.playlist_state, key);
+            match key {
+                KeyCode::Enter => {
+                    if let Some(id) = self.playlist_state.state.selected() {
+                        let uri = self.playlist_state.playlists[id].uri.as_ref();
+
+                        let selected_playlist =
+                            match self.client.spotify.playlist(uri, None, None).await {
+                                Ok(playlist) => Some(playlist),
+                                Err(_) => None,
+                            };
+
+                        self.playlist_state.selected_playlist = selected_playlist;
+                        self.playlist_state.active = false;
+                    }
+                }
+                _ => Self::update_navigation(&mut self.playlist_state, key),
+            }
         }
         if let Some(songs) = &mut self.search_state.results.songs {
             if songs.table_state.active {

@@ -4,11 +4,15 @@ pub(super) mod search;
 
 use crate::tui::colours::Palette;
 use ratatui::style::{Style, Stylize};
-use ratatui::widgets::{Block, BorderType, Borders, List};
+use ratatui::widgets::{Block, BorderType, Borders, List, Row};
 
 pub(self) fn pad<'a>(content: &'a str, size: usize) -> String {
     let padding = " ".repeat(size);
     format!("{padding}{content}{padding}")
+}
+
+trait ToRow<'a> {
+    fn to_row(&self) -> Row<'a>;
 }
 
 trait BlockExt {

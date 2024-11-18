@@ -1,5 +1,5 @@
 use crate::tui::components::player::draw_player;
-use crate::tui::components::playlist::draw_playlists_section;
+use crate::tui::components::playlist::{draw_playlist_screen, draw_playlists_sidebar};
 use crate::tui::components::search::{draw_search_input, draw_search_results};
 use crate::tui::state::State;
 use ratatui::layout::{Constraint, Layout};
@@ -22,8 +22,12 @@ fn draw(frame: &mut Frame, state: &mut State) {
     .areas(remaining_area);
 
     draw_search_input(frame, state, search);
-    draw_search_results(frame, state, main_area);
-    draw_playlists_section(frame, state, playlist_area);
 
+    match &state.playlist_state.selected_playlist {
+        None => draw_search_results(frame, state, main_area),
+        Some(playlist) => draw_playlist_screen(frame, playlist, main_area),
+    }
+
+    draw_playlists_sidebar(frame, state, playlist_area);
     draw_player(frame, state, queue_area);
 }
