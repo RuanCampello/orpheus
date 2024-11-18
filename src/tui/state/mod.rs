@@ -127,7 +127,7 @@ impl State {
                 .unwrap_or("default_image_url");
 
             self.player
-                .update_current_image(image_url, &self.window_height);
+                .update_current_image(image_url, self.window_height);
 
             self.player.playing = playing;
         }
@@ -189,7 +189,7 @@ impl State {
         let device_id = self.config.device_id.take();
         let track_idx = songs.table_state.state.selected();
         if let Some(track_uri) = songs.data.items.get(track_idx.unwrap_or(0)) {
-            match &self
+            if self
                 .client
                 .spotify
                 .start_playback(
@@ -200,9 +200,9 @@ impl State {
                     None,
                 )
                 .await
+                .is_ok()
             {
-                Ok(_) => self.update_playing_state().await,
-                Err(e) => eprintln!("Something went wrong {e:?}"),
+                self.update_playing_state().await
             };
         }
     }

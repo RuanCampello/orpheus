@@ -11,6 +11,7 @@ pub(in crate::tui) struct PlayerState {
 pub(in crate::tui) struct Image {
     pub ascii: String,
     pub image_url: String,
+    rendered_at_size: u16,
 }
 
 impl PlayerState {
@@ -21,16 +22,18 @@ impl PlayerState {
         }
     }
 
-    pub fn update_current_image(&mut self, url: &str, height: &u16) {
+    /// Create and update ascii image if the window size or the image source has changed.
+    pub fn update_current_image(&mut self, url: &str, height: u16) {
         if let Some(current_image) = &self.image {
-            if current_image.image_url == url {
+            if current_image.image_url == url && current_image.rendered_at_size == height {
                 return;
             }
         }
 
         self.image = Some(Image {
-            ascii: image_url_to_ascii(url, height).unwrap_or_default(),
+            ascii: image_url_to_ascii(url, &height).unwrap_or_default(),
             image_url: url.to_string(),
+            rendered_at_size: height,
         });
     }
 }
