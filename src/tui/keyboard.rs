@@ -13,6 +13,8 @@ pub(super) trait Navigable {
 impl State {
     pub(super) async fn handle_key(&mut self, key: KeyCode) {
         let on_playlist_sidebar = self.playlist_state.active;
+        let on_playlist_page = self.playlist_state.selected_playlist.playlist.is_some()
+            && self.playlist_state.selected_playlist.state.active;
 
         match key {
             // search/playlist navigation
@@ -21,8 +23,13 @@ impl State {
             }
 
             // playlist page navigation
-            KeyCode::Up | KeyCode::Down | KeyCode::Enter | KeyCode::Left | KeyCode::Right
-                if self.playlist_state.selected_playlist.playlist.is_some() =>
+            KeyCode::Up
+            | KeyCode::Down
+            | KeyCode::Enter
+            | KeyCode::Left
+            | KeyCode::Right
+            | KeyCode::Esc
+                if on_playlist_page =>
             {
                 match key {
                     KeyCode::Enter => {
@@ -39,6 +46,7 @@ impl State {
                             key,
                         );
                     }
+                    KeyCode::Esc => self.playlist_state.selected_playlist.state.active = false,
                     _ => unreachable!(),
                 }
             }

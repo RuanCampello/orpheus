@@ -74,6 +74,7 @@ impl PlaylistState {
 
         self.selected_playlist.playlist = new_playlist;
         self.active = false;
+        self.selected_playlist.state.active = true;
         self.selected_playlist.state.max_size = size;
         // resets the offset and selects the first track when changing playlists
         self.selected_playlist.state.state.select(Some(0));
