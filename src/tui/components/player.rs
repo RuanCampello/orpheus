@@ -1,6 +1,7 @@
 use crate::internal::text::{Size, Text};
 use crate::tui::components::BlockExt;
 use crate::tui::state::State;
+use deunicode::deunicode;
 use ratatui::layout::{Constraint, Layout, Rect};
 use ratatui::style::{Color, Style, Stylize};
 use ratatui::text::{Line, Span};
@@ -23,11 +24,12 @@ pub fn draw_player<'a>(frame: &'a mut Frame, state: &'a mut State, area: Rect) {
 
     if let Some(playing) = &state.player.playing {
         let song = playing.item.as_ref().unwrap();
+        let song_name = match song.name.is_ascii() {
+            true => song.name.as_str(),
+            false => &deunicode(&song.name),
+        };
 
-        let lines = &[&Line::from(Span::styled(
-            song.name.as_str(),
-            Style::new().bold(),
-        ))];
+        let lines = &[&Line::from(Span::styled(song_name, Style::new().bold()))];
 
         let info = Text::new().size(&Size::Quarter).lines(lines);
         frame.render_widget(info, info_area);

@@ -519,6 +519,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "deunicode"
+version = "1.6.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "339544cc9e2c4dc3fc7149fd630c5f22263a4fdf18a98afd0075784968b5cf00"
+
+[[package]]
 name = "diff"
 version = "0.1.13"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1845,6 +1851,7 @@ name = "orpheus"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "deunicode",
  "dotenv 0.15.0",
  "font8x8",
  "image",

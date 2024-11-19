@@ -6,7 +6,7 @@ use ratatui::text::{Line, StyledGrapheme};
 use ratatui::widgets::Widget;
 use std::cmp::min;
 
-#[derive(Default, Clone)]
+#[derive(Default)]
 pub enum Size {
     #[default]
     Full,

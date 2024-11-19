@@ -6,13 +6,11 @@ use crate::internal::config::Config;
 use crate::internal::Client;
 use crate::tui::draw;
 use crate::tui::state::player::PlayerState;
-use crate::tui::state::playlist::SelectedPlaylist;
+use crate::tui::state::playlist::PlaylistState;
 use crate::tui::state::search::{ResultItem, SearchState, TableStateExt};
 use ratatui::backend::CrosstermBackend;
 use ratatui::crossterm::event::{self, Event};
-use ratatui::widgets::ListState;
 use ratatui::Terminal;
-use rspotify::model::playlist::SimplifiedPlaylist;
 use rspotify::model::search::SearchResult;
 use rspotify::model::user::PrivateUser;
 use rspotify::senum::SearchType;
@@ -38,16 +36,6 @@ pub(crate) struct State {
 pub(in crate::tui) struct WindowSize {
     pub height: u16,
     pub width: u16,
-}
-
-pub(in crate::tui) struct PlaylistState {
-    pub active: bool,
-    pub offset: u32,
-    pub offset_step: u32,
-    pub state: ListState,
-
-    pub selected_playlist: SelectedPlaylist,
-    pub playlists: Vec<SimplifiedPlaylist>,
 }
 
 impl State {

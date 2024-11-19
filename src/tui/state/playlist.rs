@@ -1,12 +1,21 @@
 use crate::tui::keyboard::Navigable;
 use crate::tui::state::search::TableStateExt;
-use crate::tui::state::PlaylistState;
 use ratatui::crossterm::event::KeyCode;
 use ratatui::widgets::ListState;
 use rspotify::model::page::Page;
 use rspotify::model::playlist::{FullPlaylist, PlaylistTrack, SimplifiedPlaylist};
 
-pub(in crate::tui::state) struct SelectedPlaylist {
+pub(in crate::tui) struct PlaylistState {
+    pub active: bool,
+    pub offset: u32,
+    pub offset_step: u32,
+    pub state: ListState,
+
+    pub selected_playlist: SelectedPlaylist,
+    pub playlists: Vec<SimplifiedPlaylist>,
+}
+
+pub(in crate::tui) struct SelectedPlaylist {
     pub playlist: Option<FullPlaylist>,
     pub state: TableStateExt,
 }
