@@ -88,14 +88,16 @@ impl PlaylistState {
     /// Handles the playlist page horizontal navigation.
     pub fn handle_navigation(&mut self, key: KeyCode) {
         let offset_step = self.offset_step;
+        #[rustfmt::skip]
+        let length = self.selected_playlist.playlist.as_ref().unwrap().tracks.items.len() as u32;
 
         match key {
-            KeyCode::Right => {
+            #[rustfmt::skip]
+            KeyCode::Right => if offset_step <= length {
                 self.offset += offset_step;
-            }
-            KeyCode::Left => {
-                self.offset = self.offset.saturating_sub(offset_step);
-            }
+            },
+            KeyCode::Left => self.offset = self.offset.saturating_sub(offset_step),
+
             _ => unreachable!(),
         }
     }
@@ -109,6 +111,7 @@ impl Navigable for PlaylistState {
             .unwrap_or(usize::MAX)
             .saturating_add(1)
             % self.playlists.len();
+
         self.state.select(Some(i));
     }
 
