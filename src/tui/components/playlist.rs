@@ -1,11 +1,12 @@
 use crate::tui::components::search::draw_results_table;
 use crate::tui::components::{pad, BlockExt, ListExt, ToRow};
+use crate::tui::state::playlist::SelectedPlaylist;
 use crate::tui::State;
 use ratatui::layout::{Constraint, Rect};
 use ratatui::text::Span;
 use ratatui::widgets::{Block, BorderType, List, ListItem, Row};
 use ratatui::{text, Frame};
-use rspotify::model::playlist::{FullPlaylist, PlaylistTrack};
+use rspotify::model::playlist::PlaylistTrack;
 use std::time::Duration;
 
 impl<'a> ToRow<'a> for PlaylistTrack {
@@ -62,7 +63,7 @@ pub fn draw_playlists_sidebar<'a>(frame: &'a mut Frame, state: &'a mut State, ar
 
 pub fn draw_playlist_screen<'a>(
     frame: &'a mut Frame,
-    playlist: &'a FullPlaylist,
+    selected_playlist: &'a mut SelectedPlaylist,
     offset: u32,
     area: Rect,
 ) {
@@ -74,15 +75,16 @@ pub fn draw_playlist_screen<'a>(
         Constraint::Length(5),
     ];
     const HEADERS: &[&str; 5] = &["#", "Title", "Artist", "Album", "Time"];
+    let playlist = selected_playlist.playlist.as_ref().unwrap();
 
     let playlist_table = draw_results_table(
         &playlist.tracks.items,
         &playlist.name,
         WIDTHS,
-        false,
+        true,
         HEADERS,
         Some(offset),
     );
 
-    frame.render_widget(playlist_table, area);
+    frame.render_stateful_widget(playlist_table, area, &mut selected_playlist.state.state);
 }

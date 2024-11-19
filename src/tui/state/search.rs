@@ -1,4 +1,5 @@
 use crate::tui::keyboard::Navigable;
+use crate::tui::state::playlist::Playable;
 use ratatui::crossterm::event::KeyCode;
 use ratatui::widgets::TableState;
 use rspotify::model::album::SimplifiedAlbum;
@@ -33,7 +34,24 @@ pub(in crate::tui) struct TableStateExt {
 impl TableStateExt {
     pub fn new(max_size: usize) -> Self {
         let state = TableState::default().with_selected(0);
-        Self { state, max_size, active: false }
+        Self {
+            state,
+            max_size,
+            active: false,
+        }
+    }
+}
+
+impl Playable for &ResultItem<Page<FullTrack>> {
+    fn get_selected_track_uri(self) -> Option<String> {
+        if let Some(song) = self
+            .data
+            .items
+            .get(self.table_state.state.selected().unwrap_or(0))
+        {
+            return Some(song.uri.to_string());
+        }
+        None
     }
 }
 
@@ -54,7 +72,7 @@ impl Navigable for TableStateExt {
             .map_or(0, |i| (i.saturating_sub(1)) % self.max_size);
         self.state.select(Some(i));
     }
-    
+
     fn toggle_active(&mut self) {
         self.active = !self.active;
     }

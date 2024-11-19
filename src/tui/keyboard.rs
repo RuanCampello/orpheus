@@ -1,3 +1,4 @@
+use crate::tui::state::playlist::Playable;
 use crate::tui::state::search::ResultItem;
 use crate::tui::state::PlaylistState;
 use crate::tui::State;
@@ -36,10 +37,26 @@ impl State {
         let on_playlist_sidebar = self.playlist_state.active;
 
         match key {
-            // navigation keys
+            // search/playlist navigation
             KeyCode::Up | KeyCode::Down | KeyCode::Enter if on_playlist_sidebar => {
                 self.navigate(key).await;
             }
+            // playlist page navigation
+            KeyCode::Up | KeyCode::Down | KeyCode::Enter
+                if self.playlist_state.selected_playlist.playlist.is_some() =>
+            {
+                if key.eq(&KeyCode::Enter) {
+                    let uri = self
+                        .playlist_state
+                        .selected_playlist
+                        .get_selected_track_uri();
+
+                    self.play_selected_track(uri).await;
+                } else {
+                    Self::update_navigation(&mut self.playlist_state.selected_playlist.state, key);
+                }
+            }
+
             KeyCode::Left | KeyCode::Right if !on_playlist_sidebar => {
                 self.control_playlist(key).await;
             }
@@ -84,63 +101,53 @@ impl State {
                     songs.table_state.active = true
                 }
             }
-            KeyCode::Enter => self.play_selected_track().await,
+            KeyCode::Enter => {
+                if let Some(tracks) = &self.search_state.results.songs {
+                    let uri = tracks.get_selected_track_uri();
+                    self.play_selected_track(uri).await
+                }
+            }
             _ => {}
         }
     }
 
     /// Handles navigation on playlist page.
     async fn control_playlist(&mut self, key: KeyCode) {
-        if let Some(selected_playlist) = &mut self.playlist_state.selected_playlist {
-            let uri = &selected_playlist.uri;
-            let offset_step = self.window.height.saturating_sub(8) as u32;
-            // println!("{offset_step}");
+        let Some(selected_playlist) = &mut self.playlist_state.selected_playlist.playlist else {
+            return;
+        };
 
-            match key {
-                KeyCode::Right => {
-                    self.playlist_state.offset += offset_step;
+        let uri = &selected_playlist.uri;
+        let offset_step = self.window.height.saturating_sub(8) as u32;
 
-                    if let Ok(playlist) = self
-                        .client
-                        .spotify
-                        .user_playlist_tracks(
-                            "spotify",
-                            uri,
-                            None,
-                            None,
-                            Some(self.playlist_state.offset),
-                            None,
-                        )
-                        .await
-                    {
-                        selected_playlist.tracks = playlist;
-                    }
-                }
-                KeyCode::Left => {
-                    self.playlist_state.offset =
-                        self.playlist_state.offset.saturating_sub(offset_step);
-
-                    if let Ok(playlist) = self
-                        .client
-                        .spotify
-                        .user_playlist_tracks(
-                            "spotify",
-                            uri,
-                            None,
-                            None,
-                            Some(self.playlist_state.offset),
-                            None,
-                        )
-                        .await
-                    {
-                        selected_playlist.tracks = playlist;
-                    }
-                }
-                _ => {}
+        match key {
+            KeyCode::Right => {
+                self.playlist_state.offset += offset_step;
             }
+            KeyCode::Left => {
+                self.playlist_state.offset = self.playlist_state.offset.saturating_sub(offset_step);
+            }
+            _ => unreachable!(),
+        }
+
+        if let Ok(playlist) = self
+            .client
+            .spotify
+            .user_playlist_tracks(
+                "spotify",
+                uri,
+                None,
+                None,
+                Some(self.playlist_state.offset),
+                None,
+            )
+            .await
+        {
+            selected_playlist.tracks = playlist;
         }
     }
 
+    /// Handles the playlist and the search results navigation.
     async fn navigate(&mut self, key: KeyCode) {
         if self.playlist_state.active {
             match key {
@@ -148,13 +155,17 @@ impl State {
                     if let Some(id) = self.playlist_state.state.selected() {
                         let uri = self.playlist_state.playlists[id].uri.as_ref();
 
-                        let selected_playlist =
+                        let (selected_playlist, size) =
                             match self.client.spotify.playlist(uri, None, None).await {
-                                Ok(playlist) => Some(playlist),
-                                Err(_) => None,
+                                Ok(playlist) => {
+                                    let size = playlist.tracks.items.len();
+                                    (Some(playlist), size)
+                                }
+                                Err(_) => (None, 0),
                             };
 
-                        self.playlist_state.selected_playlist = selected_playlist;
+                        self.playlist_state.selected_playlist.state.max_size = size;
+                        self.playlist_state.selected_playlist.playlist = selected_playlist;
                         self.playlist_state.active = false;
                     }
                 }

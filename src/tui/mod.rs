@@ -23,9 +23,15 @@ fn draw(frame: &mut Frame, state: &mut State) {
 
     draw_search_input(frame, state, search);
 
-    match &state.playlist_state.selected_playlist {
-        None => draw_search_results(frame, state, main_area),
-        Some(playlist) => draw_playlist_screen(frame, playlist, state.playlist_state.offset, main_area),
+    #[allow(clippy::op_ref)]
+    match &state.playlist_state.selected_playlist.state.max_size > &0 {
+        false => draw_search_results(frame, state, main_area),
+        true => draw_playlist_screen(
+            frame,
+            &mut state.playlist_state.selected_playlist,
+            state.playlist_state.offset,
+            main_area,
+        ),
     }
 
     draw_playlists_sidebar(frame, state, playlist_area);

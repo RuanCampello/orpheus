@@ -1,16 +1,18 @@
 mod player;
+pub mod playlist;
 pub(super) mod search;
 
 use crate::internal::config::Config;
 use crate::internal::Client;
 use crate::tui::draw;
 use crate::tui::state::player::PlayerState;
+use crate::tui::state::playlist::{Playable, SelectedPlaylist};
 use crate::tui::state::search::{ResultItem, SearchState, TableStateExt};
 use ratatui::backend::CrosstermBackend;
 use ratatui::crossterm::event::{self, Event};
 use ratatui::widgets::ListState;
 use ratatui::Terminal;
-use rspotify::model::playlist::{FullPlaylist, SimplifiedPlaylist};
+use rspotify::model::playlist::SimplifiedPlaylist;
 use rspotify::model::search::SearchResult;
 use rspotify::model::user::PrivateUser;
 use rspotify::senum::SearchType;
@@ -39,24 +41,10 @@ pub(in crate::tui) struct WindowSize {
 
 pub(super) struct PlaylistState {
     pub playlists: Vec<SimplifiedPlaylist>,
-    pub selected_playlist: Option<FullPlaylist>,
+    pub selected_playlist: SelectedPlaylist,
     pub offset: u32,
     pub state: ListState,
     pub active: bool,
-}
-
-impl PlaylistState {
-    fn new(playlists: Vec<SimplifiedPlaylist>) -> Self {
-        let state = ListState::default().with_selected(Some(0));
-
-        Self {
-            playlists,
-            selected_playlist: None,
-            state,
-            active: false,
-            offset: 0,
-        }
-    }
 }
 
 impl State {
@@ -98,7 +86,6 @@ impl State {
 
         // fetches the currently playing state on the launch.
         self.update_playing_state().await;
-        
 
         // updates the window size on first launch.
         let size = terminal.size()?;
@@ -198,33 +185,21 @@ impl State {
     }
 
     /// Tries to play the currently selected track in the search results.
-    pub(super) async fn play_selected_track(&mut self) {
-        let songs = match &self.search_state.results.songs {
-            Some(s) => s,
-            None => return,
-        };
+    pub(super) async fn play_selected_track(&mut self, uri: Option<String>) {
+        let track_uri = uri.map(|uri| uri.to_string()).unwrap_or_default();
 
         // TODO: why does when using ctx+device_id not working?
 
         let device_id = self.config.device_id.take();
-        let track_idx = songs.table_state.state.selected();
-        if let Some(track_uri) = songs.data.items.get(track_idx.unwrap_or(0)) {
-            if self
-                .client
-                .spotify
-                .start_playback(
-                    device_id,
-                    None,
-                    Some(vec![track_uri.uri.to_string()]),
-                    None,
-                    None,
-                )
-                .await
-                .is_ok()
-            {
-                self.update_playing_state().await
-            };
-        }
+        if self
+            .client
+            .spotify
+            .start_playback(device_id, None, Some(vec![track_uri]), None, None)
+            .await
+            .is_ok()
+        {
+            self.update_playing_state().await
+        };
     }
 
     fn handle_resize(&mut self, x: u16, y: u16) {
