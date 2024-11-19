@@ -41,6 +41,17 @@ pub(in crate::tui) struct TableStateExt {
     pub active: bool,
 }
 
+impl<T> ResultItem<Page<T>> {
+    pub fn new(result: Page<T>) -> Self {
+        let length = result.items.len();
+
+        Self {
+            data: result,
+            table_state: TableStateExt::new(length),
+        }
+    }
+}
+
 impl TableStateExt {
     pub fn new(max_size: usize) -> Self {
         let state = TableState::default().with_selected(0);

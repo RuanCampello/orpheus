@@ -7,7 +7,7 @@ use crate::internal::Client;
 use crate::tui::draw;
 use crate::tui::state::player::PlayerState;
 use crate::tui::state::playlist::PlaylistState;
-use crate::tui::state::search::{ResultItem, SearchState, TableStateExt};
+use crate::tui::state::search::{ResultItem, SearchState};
 use ratatui::backend::CrosstermBackend;
 use ratatui::crossterm::event::{self, Event};
 use ratatui::Terminal;
@@ -18,9 +18,10 @@ use std::io;
 use std::io::Stdout;
 use std::time::{Duration, Instant};
 
-/// Controls the page that should be rendered in main area.
-#[derive(PartialEq, Debug)]
+/// Defines the page that should be rendered in main area.
+#[derive(PartialEq, Debug, Default)]
 pub enum Tab {
+    #[default]
     Home,
     SearchResults,
     PlaylistPage,
@@ -66,7 +67,7 @@ impl State {
             config,
             user,
             playlist_state,
-            tab: Tab::Home,
+            tab: Tab::default(),
             player: PlayerState::new(),
             search_state: SearchState::new(),
             should_quit: false,
@@ -167,18 +168,9 @@ impl State {
                 SearchResult::Artists(artists),
                 SearchResult::Albums(albums),
             )) => {
-                self.search_state.results.songs = Some(ResultItem {
-                    table_state: TableStateExt::new(tracks.items.len()),
-                    data: tracks,
-                });
-                self.search_state.results.artists = Some(ResultItem {
-                    table_state: TableStateExt::new(artists.items.len()),
-                    data: artists,
-                });
-                self.search_state.results.albums = Some(ResultItem {
-                    table_state: TableStateExt::new(albums.items.len()),
-                    data: albums,
-                });
+                self.search_state.results.songs = Some(ResultItem::new(tracks));
+                self.search_state.results.artists = Some(ResultItem::new(artists));
+                self.search_state.results.albums = Some(ResultItem::new(albums));
             }
             _ => {}
         };
