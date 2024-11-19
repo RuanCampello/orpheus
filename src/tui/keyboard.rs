@@ -1,24 +1,24 @@
 use crate::tui::state::playlist::Playable;
-use crate::tui::state::search::ResultItem;
+use crate::tui::state::search::ActiveResult;
+use crate::tui::state::Tab;
 use crate::tui::State;
 use ratatui::crossterm::event::KeyCode;
-use rspotify::model::page::Page;
 
 pub(super) trait Navigable {
     fn next(&mut self);
     fn previous(&mut self);
-    fn toggle_active(&mut self);
+    fn set_active(&mut self, active: bool);
 }
 
 impl State {
     pub(super) async fn handle_key(&mut self, key: KeyCode) {
-        let on_playlist_sidebar = self.playlist_state.active;
-        let on_playlist_page = self.playlist_state.selected_playlist.playlist.is_some()
-            && self.playlist_state.selected_playlist.state.active;
+        let on_playlist_page =
+            self.tab.eq(&Tab::PlaylistPage) && self.playlist_state.selected_playlist.state.active;
+        let on_search_page = self.tab.eq(&Tab::SearchResults) || self.playlist_state.active;
 
         match key {
             // search/playlist navigation
-            KeyCode::Up | KeyCode::Down | KeyCode::Enter if on_playlist_sidebar => {
+            KeyCode::Up | KeyCode::Down | KeyCode::Enter if on_search_page => {
                 self.navigate(key).await;
             }
 
@@ -64,17 +64,25 @@ impl State {
     }
 
     fn handle_character(&mut self, c: char) {
-        match self.search_state.active {
+        let search_state = &mut self.search_state;
+
+        match search_state.active {
             false => match c {
-                '1' => self.playlist_state.toggle_active(),
-                's' => Self::toggle_active_state(&mut self.search_state.results.songs),
-                'a' => Self::toggle_active_state(&mut self.search_state.results.albums),
-                'd' => Self::toggle_active_state(&mut self.search_state.results.artists),
+                '1' => {
+                    search_state.set_active(ActiveResult::None);
+                    self.playlist_state.set_active(!self.playlist_state.active)
+                }
+                's' => search_state.set_active(ActiveResult::Songs),
+                'a' => search_state.set_active(ActiveResult::Albums),
+                'd' => search_state.set_active(ActiveResult::Artists),
                 'q' => self.should_quit = true,
-                'e' => self.search_state.active = !self.search_state.active,
+                'e' => {
+                    search_state.set_active(ActiveResult::None);
+                    search_state.active = !search_state.active
+                }
                 _ => {}
             },
-            true => self.search_state.handle_char(c),
+            true => search_state.handle_char(c),
         }
     }
 
@@ -90,6 +98,8 @@ impl State {
                 if let Some(songs) = &mut self.search_state.results.songs {
                     songs.table_state.active = true
                 }
+
+                self.tab = Tab::SearchResults;
             }
             _ => {}
         }
@@ -135,22 +145,30 @@ impl State {
                         .map(Some)
                         .unwrap_or(None);
 
-                    self.playlist_state.update(selected_playlist)
+                    self.playlist_state.update(selected_playlist);
+                    self.tab = Tab::PlaylistPage
                 }
                 _ => Self::update_navigation(&mut self.playlist_state, key),
             }
         }
+
         if let Some(songs) = &mut self.search_state.results.songs {
-            if songs.table_state.active {
-                Self::update_navigation(&mut songs.table_state, key);
+            if !songs.table_state.active {
+                return;
             }
-        }
-        if let Some(albums) = &mut self.search_state.results.albums {
+
+            match key {
+                KeyCode::Enter => {
+                    let uri = (&*songs).get_selected_track_uri();
+                    self.play_selected_track(uri).await;
+                }
+                _ => Self::update_navigation(&mut songs.table_state, key),
+            }
+        } else if let Some(albums) = &mut self.search_state.results.albums {
             if albums.table_state.active {
                 Self::update_navigation(&mut albums.table_state, key);
             }
-        }
-        if let Some(artists) = &mut self.search_state.results.artists {
+        } else if let Some(artists) = &mut self.search_state.results.artists {
             if artists.table_state.active {
                 Self::update_navigation(&mut artists.table_state, key);
             }
@@ -163,12 +181,6 @@ impl State {
             KeyCode::Up => navigable.previous(),
             KeyCode::Down => navigable.next(),
             _ => {}
-        }
-    }
-
-    fn toggle_active_state<T>(state: &mut Option<ResultItem<Page<T>>>) {
-        if let Some(result_item) = state {
-            result_item.table_state.toggle_active();
         }
     }
 }

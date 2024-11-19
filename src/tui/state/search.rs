@@ -7,6 +7,15 @@ use rspotify::model::artist::FullArtist;
 use rspotify::model::page::Page;
 use rspotify::model::track::FullTrack;
 
+#[derive(Debug, PartialEq, Default)]
+pub(in crate::tui) enum ActiveResult {
+    Songs,
+    Artists,
+    Albums,
+    #[default]
+    None,
+}
+
 pub(in crate::tui) struct ResultItem<T> {
     pub data: T,
     pub table_state: TableStateExt,
@@ -16,6 +25,7 @@ pub(in crate::tui) struct SearchResult {
     pub artists: Option<ResultItem<Page<FullArtist>>>,
     pub songs: Option<ResultItem<Page<FullTrack>>>,
     pub albums: Option<ResultItem<Page<SimplifiedAlbum>>>,
+    pub active: ActiveResult,
 }
 
 pub(in crate::tui) struct SearchState {
@@ -73,8 +83,8 @@ impl Navigable for TableStateExt {
         self.state.select(Some(i));
     }
 
-    fn toggle_active(&mut self) {
-        self.active = !self.active;
+    fn set_active(&mut self, active: bool) {
+        self.active = active;
     }
 }
 
@@ -84,6 +94,7 @@ impl SearchState {
             albums: None,
             songs: None,
             artists: None,
+            active: ActiveResult::default(),
         };
 
         Self {
@@ -99,6 +110,43 @@ impl SearchState {
             KeyCode::Esc => self.active = false,
             KeyCode::Backspace => self.delete_char(),
             _ => {}
+        }
+    }
+
+    /// Sets the active result option based on the target.
+    pub fn set_active(&mut self, target: ActiveResult) {
+        self.disable_all();
+        // self.
+
+        match target {
+            ActiveResult::Songs => {
+                if let Some(songs) = &mut self.results.songs {
+                    songs.table_state.active = true;
+                }
+            }
+            ActiveResult::Albums => {
+                if let Some(albums) = &mut self.results.albums {
+                    albums.table_state.active = true;
+                }
+            }
+            ActiveResult::Artists => {
+                if let Some(artists) = &mut self.results.artists {
+                    artists.table_state.active = true;
+                }
+            }
+            ActiveResult::None => self.disable_all(),
+        }
+    }
+
+    fn disable_all(&mut self) {
+        if let Some(songs) = &mut self.results.songs {
+            songs.table_state.active = false;
+        }
+        if let Some(albums) = &mut self.results.albums {
+            albums.table_state.active = false;
+        }
+        if let Some(artists) = &mut self.results.artists {
+            artists.table_state.active = false;
         }
     }
 

@@ -1,7 +1,7 @@
 use crate::tui::components::player::draw_player;
 use crate::tui::components::playlist::{draw_playlist_screen, draw_playlists_sidebar};
 use crate::tui::components::search::{draw_search_input, draw_search_results};
-use crate::tui::state::State;
+use crate::tui::state::{State, Tab};
 use ratatui::layout::{Constraint, Layout};
 use ratatui::Frame;
 
@@ -24,15 +24,16 @@ fn draw(frame: &mut Frame, state: &mut State) {
     draw_search_input(frame, state, search);
 
     #[allow(clippy::op_ref)]
-    match &state.playlist_state.selected_playlist.state.max_size > &0 {
-        false => draw_search_results(frame, state, main_area),
-        true => draw_playlist_screen(
+    match state.tab {
+        Tab::SearchResults => draw_search_results(frame, state, main_area),
+        Tab::PlaylistPage => draw_playlist_screen(
             frame,
             &mut state.playlist_state.selected_playlist,
             state.playlist_state.offset,
             state.playlist_state.offset_step,
             main_area,
         ),
+        Tab::Home => {}
     }
 
     draw_playlists_sidebar(frame, state, playlist_area);

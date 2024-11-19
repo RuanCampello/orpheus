@@ -18,8 +18,18 @@ use std::io;
 use std::io::Stdout;
 use std::time::{Duration, Instant};
 
+/// Controls the page that should be rendered in main area.
+#[derive(PartialEq, Debug)]
+pub enum Tab {
+    Home,
+    SearchResults,
+    PlaylistPage,
+}
+
 /// Interface that reflects and calls the client in order to generate the UI.
 pub(crate) struct State {
+    pub tab: Tab,
+
     pub client: Client,
     user: PrivateUser,
     config: Config,
@@ -44,7 +54,6 @@ impl State {
         let playlists_future = client.spotify.current_user_playlists(50, 0);
 
         let (user, playlists) = tokio::join!(user_future, playlists_future);
-
         let user = user.expect("Current user not found");
 
         let playlist_state = match playlists {
@@ -57,6 +66,7 @@ impl State {
             config,
             user,
             playlist_state,
+            tab: Tab::Home,
             player: PlayerState::new(),
             search_state: SearchState::new(),
             should_quit: false,

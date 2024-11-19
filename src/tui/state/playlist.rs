@@ -124,7 +124,7 @@ impl Navigable for PlaylistState {
         self.state.select(Some(i));
     }
 
-    fn toggle_active(&mut self) {
-        self.active = !self.active;
+    fn set_active(&mut self, active: bool) {
+        self.active = active;
     }
 }
