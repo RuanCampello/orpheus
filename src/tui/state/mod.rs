@@ -6,7 +6,7 @@ use crate::internal::config::Config;
 use crate::internal::Client;
 use crate::tui::draw;
 use crate::tui::state::player::PlayerState;
-use crate::tui::state::playlist::{Playable, SelectedPlaylist};
+use crate::tui::state::playlist::SelectedPlaylist;
 use crate::tui::state::search::{ResultItem, SearchState, TableStateExt};
 use ratatui::backend::CrosstermBackend;
 use ratatui::crossterm::event::{self, Event};
@@ -26,7 +26,8 @@ pub(crate) struct State {
     user: PrivateUser,
     config: Config,
 
-    pub(super) playlist_state: PlaylistState,
+    pub(in crate::tui) playlist_state: PlaylistState,
+
     pub(super) search_state: SearchState,
     pub(super) should_quit: bool,
     pub(super) player: PlayerState,
@@ -39,13 +40,14 @@ pub(in crate::tui) struct WindowSize {
     pub width: u16,
 }
 
-pub(super) struct PlaylistState {
-    pub playlists: Vec<SimplifiedPlaylist>,
-    pub selected_playlist: SelectedPlaylist,
+pub(in crate::tui) struct PlaylistState {
+    pub active: bool,
     pub offset: u32,
     pub offset_step: u32,
     pub state: ListState,
-    pub active: bool,
+
+    pub selected_playlist: SelectedPlaylist,
+    pub playlists: Vec<SimplifiedPlaylist>,
 }
 
 impl State {
@@ -186,15 +188,19 @@ impl State {
 
     /// Tries to play the currently selected track in the search results.
     pub(super) async fn play_selected_track(&mut self, uri: Option<String>) {
-        let track_uri = uri.map(|uri| uri.to_string()).unwrap_or_default();
-
         // TODO: why does when using ctx+device_id not working?
 
         let device_id = self.config.device_id.take();
         if self
             .client
             .spotify
-            .start_playback(device_id, None, Some(vec![track_uri]), None, None)
+            .start_playback(
+                device_id,
+                None,
+                Some(vec![uri.unwrap_or_default()]),
+                None,
+                None,
+            )
             .await
             .is_ok()
         {

@@ -43,7 +43,7 @@ impl TableStateExt {
 }
 
 impl Playable for &ResultItem<Page<FullTrack>> {
-    fn get_selected_track_uri(self) -> Option<String> {
+    fn get_selected_track_uri(&self) -> Option<String> {
         if let Some(song) = self
             .data
             .items

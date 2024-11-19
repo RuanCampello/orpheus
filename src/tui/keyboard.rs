@@ -1,36 +1,13 @@
 use crate::tui::state::playlist::Playable;
 use crate::tui::state::search::ResultItem;
-use crate::tui::state::PlaylistState;
 use crate::tui::State;
 use ratatui::crossterm::event::KeyCode;
 use rspotify::model::page::Page;
-use rspotify::model::playlist::FullPlaylist;
 
 pub(super) trait Navigable {
     fn next(&mut self);
     fn previous(&mut self);
     fn toggle_active(&mut self);
-}
-
-impl Navigable for PlaylistState {
-    fn next(&mut self) {
-        let i = self
-            .state
-            .selected()
-            .unwrap_or(usize::MAX)
-            .saturating_add(1)
-            % self.playlists.len();
-        self.state.select(Some(i));
-    }
-
-    fn previous(&mut self) {
-        let i = self.state.selected().unwrap_or(0).saturating_sub(1) % self.playlists.len();
-        self.state.select(Some(i));
-    }
-
-    fn toggle_active(&mut self) {
-        self.active = !self.active;
-    }
 }
 
 impl State {
@@ -42,24 +19,28 @@ impl State {
             KeyCode::Up | KeyCode::Down | KeyCode::Enter if on_playlist_sidebar => {
                 self.navigate(key).await;
             }
+
             // playlist page navigation
-            KeyCode::Up | KeyCode::Down | KeyCode::Enter
+            KeyCode::Up | KeyCode::Down | KeyCode::Enter | KeyCode::Left | KeyCode::Right
                 if self.playlist_state.selected_playlist.playlist.is_some() =>
             {
-                if key.eq(&KeyCode::Enter) {
-                    let uri = self
-                        .playlist_state
-                        .selected_playlist
-                        .get_selected_track_uri();
-
-                    self.play_selected_track(uri).await;
-                } else {
-                    Self::update_navigation(&mut self.playlist_state.selected_playlist.state, key);
+                match key {
+                    KeyCode::Enter => {
+                        let uri = self.playlist_state.get_selected_track_uri();
+                        self.play_selected_track(uri).await;
+                    }
+                    KeyCode::Left | KeyCode::Right => {
+                        self.playlist_state.handle_navigation(key);
+                        self.new_playlist_page().await;
+                    }
+                    KeyCode::Up | KeyCode::Down => {
+                        Self::update_navigation(
+                            &mut self.playlist_state.selected_playlist.state,
+                            key,
+                        );
+                    }
+                    _ => unreachable!(),
                 }
-            }
-
-            KeyCode::Left | KeyCode::Right if !on_playlist_sidebar => {
-                self.control_playlist(key).await;
             }
 
             // character-specific actions
@@ -102,33 +83,15 @@ impl State {
                     songs.table_state.active = true
                 }
             }
-            KeyCode::Enter => {
-                if let Some(tracks) = &self.search_state.results.songs {
-                    let uri = tracks.get_selected_track_uri();
-                    self.play_selected_track(uri).await
-                }
-            }
             _ => {}
         }
     }
 
-    /// Handles navigation on playlist page.
-    async fn control_playlist(&mut self, key: KeyCode) {
-        let Some(selected_playlist) = &mut self.playlist_state.selected_playlist.playlist else {
+    /// Updates the playlist page based on offset and offset step.
+    async fn new_playlist_page(&mut self) {
+        let Some(uri) = self.playlist_state.selected_playlist_uri() else {
             return;
         };
-        let uri = &selected_playlist.uri;
-        let offset_step = self.playlist_state.offset_step;
-
-        match key {
-            KeyCode::Right => {
-                self.playlist_state.offset += offset_step;
-            }
-            KeyCode::Left => {
-                self.playlist_state.offset = self.playlist_state.offset.saturating_sub(offset_step);
-            }
-            _ => unreachable!(),
-        }
 
         if let Ok(playlist) = self
             .client
@@ -137,40 +100,34 @@ impl State {
                 "spotify",
                 uri,
                 None,
-                Some(offset_step),
+                Some(self.playlist_state.offset_step),
                 Some(self.playlist_state.offset),
                 None,
             )
             .await
         {
-            selected_playlist.tracks = playlist;
+            self.playlist_state.update_tracks(playlist);
         }
     }
 
-    /// Handles the playlist and the search results navigation.
+    /// Handles the playlist sidebar and the search results navigation.
     async fn navigate(&mut self, key: KeyCode) {
         if self.playlist_state.active {
             match key {
                 KeyCode::Enter => {
-                    let Some(id) = self.playlist_state.state.selected() else {
+                    let Some(uri) = self.playlist_state.selected_playlist_uri() else {
                         return;
                     };
-                    let uri = self.playlist_state.playlists[id].uri.as_ref();
 
-                    let (selected_playlist, size): (Option<FullPlaylist>, usize) = self
+                    let selected_playlist = self
                         .client
                         .spotify
                         .playlist(uri, None, None)
                         .await
-                        .map(|playlist| {
-                            let size = playlist.tracks.items.len();
-                            (Some(playlist), size)
-                        })
-                        .unwrap_or((None, 0));
+                        .map(Some)
+                        .unwrap_or(None);
 
-                    self.playlist_state.selected_playlist.state.max_size = size;
-                    self.playlist_state.selected_playlist.playlist = selected_playlist;
-                    self.playlist_state.active = false;
+                    self.playlist_state.update(selected_playlist)
                 }
                 _ => Self::update_navigation(&mut self.playlist_state, key),
             }
@@ -192,6 +149,7 @@ impl State {
         }
     }
 
+    /// Handles `Navigable` vertical navigation.
     fn update_navigation<T: Navigable>(navigable: &mut T, key: KeyCode) {
         match key {
             KeyCode::Up => navigable.previous(),
