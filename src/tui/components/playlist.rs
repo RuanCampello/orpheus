@@ -9,7 +9,7 @@ use ratatui::{text, Frame};
 use rspotify::model::playlist::PlaylistTrack;
 use std::time::Duration;
 
-impl<'a> ToRow<'a> for PlaylistTrack {
+impl<'a> ToRow<'a> for &'a PlaylistTrack {
     fn to_row(&self, idx: usize) -> Row<'a> {
         let track = self.track.as_ref().unwrap();
         let album = &track.album.name;
@@ -65,6 +65,7 @@ pub fn draw_playlist_screen<'a>(
     frame: &'a mut Frame,
     selected_playlist: &'a mut SelectedPlaylist,
     offset: u32,
+    offset_step: u32,
     area: Rect,
 ) {
     const WIDTHS: &[Constraint] = &[
@@ -78,7 +79,12 @@ pub fn draw_playlist_screen<'a>(
     let playlist = selected_playlist.playlist.as_ref().unwrap();
 
     let playlist_table = draw_results_table(
-        &playlist.tracks.items,
+        &playlist
+            .tracks
+            .items
+            .iter()
+            .take(offset_step as usize)
+            .collect::<Vec<&PlaylistTrack>>(),
         &playlist.name,
         WIDTHS,
         true,

@@ -30,6 +30,7 @@ fn draw(frame: &mut Frame, state: &mut State) {
             frame,
             &mut state.playlist_state.selected_playlist,
             state.playlist_state.offset,
+            state.playlist_state.offset_step,
             main_area,
         ),
     }

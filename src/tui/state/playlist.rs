@@ -38,6 +38,7 @@ impl PlaylistState {
             state,
             active: false,
             offset: 0,
+            offset_step: 0,
         }
     }
 }

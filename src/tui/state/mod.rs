@@ -43,6 +43,7 @@ pub(super) struct PlaylistState {
     pub playlists: Vec<SimplifiedPlaylist>,
     pub selected_playlist: SelectedPlaylist,
     pub offset: u32,
+    pub offset_step: u32,
     pub state: ListState,
     pub active: bool,
 }
@@ -89,8 +90,7 @@ impl State {
 
         // updates the window size on first launch.
         let size = terminal.size()?;
-        self.window.width = size.width;
-        self.window.height = size.height;
+        self.handle_resize(size.width, size.height);
 
         loop {
             terminal.draw(|frame| draw(frame, self))?;
@@ -203,7 +203,10 @@ impl State {
     }
 
     fn handle_resize(&mut self, x: u16, y: u16) {
-        self.window.height = y;
+        if self.window.height != y {
+            self.window.height = y;
+            self.playlist_state.offset_step = self.window.height.saturating_sub(8) as u32;
+        }
         self.window.width = x;
     }
 }

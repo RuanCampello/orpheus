@@ -4,6 +4,7 @@ use crate::tui::state::PlaylistState;
 use crate::tui::State;
 use ratatui::crossterm::event::KeyCode;
 use rspotify::model::page::Page;
+use rspotify::model::playlist::FullPlaylist;
 
 pub(super) trait Navigable {
     fn next(&mut self);
@@ -116,9 +117,8 @@ impl State {
         let Some(selected_playlist) = &mut self.playlist_state.selected_playlist.playlist else {
             return;
         };
-
         let uri = &selected_playlist.uri;
-        let offset_step = self.window.height.saturating_sub(8) as u32;
+        let offset_step = self.playlist_state.offset_step;
 
         match key {
             KeyCode::Right => {
@@ -137,7 +137,7 @@ impl State {
                 "spotify",
                 uri,
                 None,
-                None,
+                Some(offset_step),
                 Some(self.playlist_state.offset),
                 None,
             )
@@ -152,22 +152,25 @@ impl State {
         if self.playlist_state.active {
             match key {
                 KeyCode::Enter => {
-                    if let Some(id) = self.playlist_state.state.selected() {
-                        let uri = self.playlist_state.playlists[id].uri.as_ref();
+                    let Some(id) = self.playlist_state.state.selected() else {
+                        return;
+                    };
+                    let uri = self.playlist_state.playlists[id].uri.as_ref();
 
-                        let (selected_playlist, size) =
-                            match self.client.spotify.playlist(uri, None, None).await {
-                                Ok(playlist) => {
-                                    let size = playlist.tracks.items.len();
-                                    (Some(playlist), size)
-                                }
-                                Err(_) => (None, 0),
-                            };
+                    let (selected_playlist, size): (Option<FullPlaylist>, usize) = self
+                        .client
+                        .spotify
+                        .playlist(uri, None, None)
+                        .await
+                        .map(|playlist| {
+                            let size = playlist.tracks.items.len();
+                            (Some(playlist), size)
+                        })
+                        .unwrap_or((None, 0));
 
-                        self.playlist_state.selected_playlist.state.max_size = size;
-                        self.playlist_state.selected_playlist.playlist = selected_playlist;
-                        self.playlist_state.active = false;
-                    }
+                    self.playlist_state.selected_playlist.state.max_size = size;
+                    self.playlist_state.selected_playlist.playlist = selected_playlist;
+                    self.playlist_state.active = false;
                 }
                 _ => Self::update_navigation(&mut self.playlist_state, key),
             }
