@@ -75,6 +75,9 @@ impl PlaylistState {
         self.selected_playlist.playlist = new_playlist;
         self.active = false;
         self.selected_playlist.state.max_size = size;
+        // resets the offset and selects the first track when changing playlists
+        self.selected_playlist.state.state.select(Some(0));
+        self.offset = 0;
     }
 
     /// Returns the selected playlist on the sidebar if some.
