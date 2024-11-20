@@ -11,6 +11,7 @@ use crate::tui::state::search::{ResultItem, SearchState};
 use ratatui::backend::CrosstermBackend;
 use ratatui::crossterm::event::{self, Event};
 use ratatui::Terminal;
+use rspotify::model::device::Device;
 use rspotify::model::search::SearchResult;
 use rspotify::model::user::PrivateUser;
 use rspotify::senum::SearchType;
@@ -36,6 +37,7 @@ pub(crate) struct State {
     config: Config,
 
     pub(in crate::tui) playlist_state: PlaylistState,
+    pub(in crate::tui) device: Device,
 
     pub(super) search_state: SearchState,
     pub(super) should_quit: bool,
@@ -49,13 +51,24 @@ pub(in crate::tui) struct WindowSize {
     pub width: u16,
 }
 
+macro_rules! create_search_future {
+    ($client:expr, $query:expr, $_type:expr) => {
+        $client.spotify.search($query, $_type, 20, 0, None, None)
+    };
+}
+
 impl State {
     pub async fn new(client: Client, config: Config) -> Self {
         let user_future = client.spotify.current_user();
         let playlists_future = client.spotify.current_user_playlists(50, 0);
+        let device_future = client.spotify.device();
 
-        let (user, playlists) = tokio::join!(user_future, playlists_future);
+        let (user, playlists, devices) = tokio::join!(user_future, playlists_future, device_future);
         let user = user.expect("Current user not found");
+        let device: Option<Device> = match devices {
+            Ok(payload) => payload.devices.into_iter().next(),
+            Err(_) => None,
+        };
 
         let playlist_state = match playlists {
             Ok(page) => PlaylistState::new(page.items),
@@ -66,6 +79,7 @@ impl State {
             client,
             config,
             user,
+            device: device.expect("Failed to get your device"),
             playlist_state,
             tab: Tab::default(),
             player: PlayerState::new(),
@@ -148,18 +162,9 @@ impl State {
 
     pub(super) async fn search(&mut self) {
         let query = self.search_state.input.as_str();
-        let tracks_future = self
-            .client
-            .spotify
-            .search(query, SearchType::Track, 20, 0, None, None);
-        let artists_future =
-            self.client
-                .spotify
-                .search(query, SearchType::Artist, 20, 0, None, None);
-        let albums_future = self
-            .client
-            .spotify
-            .search(query, SearchType::Album, 20, 0, None, None);
+        let tracks_future = create_search_future!(self.client, query, SearchType::Track);
+        let artists_future = create_search_future!(self.client, query, SearchType::Artist);
+        let albums_future = create_search_future!(self.client, query, SearchType::Album);
 
         #[allow(clippy::single_match)]
         match tokio::try_join!(tracks_future, artists_future, albums_future) {
