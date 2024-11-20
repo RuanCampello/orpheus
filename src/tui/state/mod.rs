@@ -28,6 +28,12 @@ pub enum Tab {
     PlaylistPage,
 }
 
+#[derive(PartialEq)]
+pub(super) enum VolumeAction {
+    Increase,
+    Decrease,
+}
+
 /// Interface that reflects and calls the client in order to generate the UI.
 pub(crate) struct State {
     pub tab: Tab,
@@ -114,7 +120,10 @@ impl State {
             if event::poll(timeout)? {
                 match event::read()? {
                     Event::Resize(x, y) => self.handle_resize(x, y),
-                    Event::Key(key) => self.handle_key(key.code).await,
+                    Event::Key(key) => {
+                        // println!("{key:?}");
+                        self.handle_key(key.code).await
+                    }
                     _ => continue,
                 }
             }
@@ -201,6 +210,24 @@ impl State {
         {
             self.update_playing_state().await
         };
+    }
+
+    pub(super) async fn update_volume(&mut self, action: VolumeAction) {
+        let mut volume = self.device.volume_percent;
+        match action {
+            VolumeAction::Decrease => volume = volume.saturating_sub(5),
+            VolumeAction::Increase => volume = volume.saturating_add(5).min(100),
+        }
+
+        if self
+            .client
+            .spotify
+            .volume(volume as u8, Some(self.device.id.to_string()))
+            .await
+            .is_ok()
+        {
+            self.device.volume_percent = volume;
+        }
     }
 
     fn handle_resize(&mut self, x: u16, y: u16) {

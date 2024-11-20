@@ -1,6 +1,6 @@
 use crate::tui::state::playlist::Playable;
 use crate::tui::state::search::ActiveResult;
-use crate::tui::state::Tab;
+use crate::tui::state::{Tab, VolumeAction};
 use crate::tui::State;
 use ratatui::crossterm::event::KeyCode;
 
@@ -52,7 +52,7 @@ impl State {
             }
 
             // character-specific actions
-            KeyCode::Char(c) => self.handle_character(c),
+            KeyCode::Char(c) => self.handle_character(c).await,
 
             // search-specific actions
             KeyCode::Esc | KeyCode::Enter | KeyCode::Backspace => {
@@ -63,7 +63,7 @@ impl State {
         }
     }
 
-    fn handle_character(&mut self, c: char) {
+    async fn handle_character(&mut self, c: char) {
         let search_state = &mut self.search_state;
 
         match search_state.active {
@@ -75,11 +75,13 @@ impl State {
                 's' => search_state.set_active(ActiveResult::Songs),
                 'a' => search_state.set_active(ActiveResult::Albums),
                 'd' => search_state.set_active(ActiveResult::Artists),
-                'q' => self.should_quit = true,
                 'e' => {
                     search_state.set_active(ActiveResult::None);
                     search_state.active = !search_state.active
                 }
+                '+' => self.update_volume(VolumeAction::Increase).await,
+                '-' => self.update_volume(VolumeAction::Decrease).await,
+                'q' => self.should_quit = true,
                 _ => {}
             },
             true => search_state.handle_char(c),

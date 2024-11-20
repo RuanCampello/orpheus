@@ -15,7 +15,7 @@ fn draw(frame: &mut Frame, state: &mut State) {
     let [header_area, remaining_area] =
         Layout::vertical([Constraint::Length(3), Constraint::Min(0)]).areas(frame.area());
     let [search_area, volume_area] =
-        Layout::horizontal([Constraint::Min(0), Constraint::Percentage(12)]).areas(header_area);
+        Layout::horizontal([Constraint::Min(0), Constraint::Length(23)]).areas(header_area);
 
     let [playlist_area, main_area, queue_area] = Layout::horizontal([
         Constraint::Percentage(20),
