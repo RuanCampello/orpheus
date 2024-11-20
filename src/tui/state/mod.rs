@@ -1,5 +1,5 @@
 mod player;
-pub mod playlist;
+pub(super) mod playlist;
 pub(super) mod search;
 
 use crate::internal::config::Config;
@@ -13,7 +13,6 @@ use ratatui::crossterm::event::{self, Event};
 use ratatui::Terminal;
 use rspotify::model::device::Device;
 use rspotify::model::search::SearchResult;
-use rspotify::model::user::PrivateUser;
 use rspotify::senum::SearchType;
 use std::io;
 use std::io::Stdout;
@@ -39,7 +38,6 @@ pub(crate) struct State {
     pub tab: Tab,
 
     pub client: Client,
-    user: PrivateUser,
     config: Config,
 
     pub(in crate::tui) playlist_state: PlaylistState,
@@ -65,12 +63,10 @@ macro_rules! create_search_future {
 
 impl State {
     pub async fn new(client: Client, config: Config) -> Self {
-        let user_future = client.spotify.current_user();
         let playlists_future = client.spotify.current_user_playlists(50, 0);
         let device_future = client.spotify.device();
 
-        let (user, playlists, devices) = tokio::join!(user_future, playlists_future, device_future);
-        let user = user.expect("Current user not found");
+        let (playlists, devices) = tokio::join!(playlists_future, device_future);
         let device: Option<Device> = match devices {
             Ok(payload) => payload.devices.into_iter().next(),
             Err(_) => None,
@@ -84,7 +80,6 @@ impl State {
         Self {
             client,
             config,
-            user,
             device: device.expect("Failed to get your device"),
             playlist_state,
             tab: Tab::default(),
@@ -120,10 +115,7 @@ impl State {
             if event::poll(timeout)? {
                 match event::read()? {
                     Event::Resize(x, y) => self.handle_resize(x, y),
-                    Event::Key(key) => {
-                        // println!("{key:?}");
-                        self.handle_key(key.code).await
-                    }
+                    Event::Key(key) => self.handle_key(key.code).await,
                     _ => continue,
                 }
             }
