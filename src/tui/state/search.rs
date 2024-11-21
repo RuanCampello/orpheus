@@ -17,14 +17,14 @@ pub(in crate::tui) enum ActiveResult {
 }
 
 pub(in crate::tui) struct ResultItem<T> {
-    pub data: T,
+    pub data: Option<T>,
     pub table_state: TableStateExt,
 }
 
 pub(in crate::tui) struct SearchResult {
-    pub artists: Option<ResultItem<Page<FullArtist>>>,
-    pub songs: Option<ResultItem<Page<FullTrack>>>,
-    pub albums: Option<ResultItem<Page<SimplifiedAlbum>>>,
+    pub artists: ResultItem<Page<FullArtist>>,
+    pub songs: ResultItem<Page<FullTrack>>,
+    pub albums: ResultItem<Page<SimplifiedAlbum>>,
     pub active: ActiveResult,
 }
 
@@ -46,8 +46,17 @@ impl<T> ResultItem<Page<T>> {
         let length = result.items.len();
 
         Self {
-            data: result,
+            data: Some(result),
             table_state: TableStateExt::new(length),
+        }
+    }
+}
+
+impl<T> Default for ResultItem<T> {
+    fn default() -> Self {
+        Self {
+            data: None,
+            table_state: TableStateExt::new(0),
         }
     }
 }
@@ -65,8 +74,9 @@ impl TableStateExt {
 
 impl Playable for &ResultItem<Page<FullTrack>> {
     fn get_selected_track_uri(&self) -> Option<String> {
-        if let Some(song) = self
-            .data
+        let page = self.data.as_ref()?;
+
+        if let Some(song) = page
             .items
             .get(self.table_state.state.selected().unwrap_or(0))
         {
@@ -102,9 +112,9 @@ impl Navigable for TableStateExt {
 impl SearchState {
     pub fn new() -> Self {
         let results = SearchResult {
-            albums: None,
-            songs: None,
-            artists: None,
+            albums: ResultItem::default(),
+            songs: ResultItem::default(),
+            artists: ResultItem::default(),
             active: ActiveResult::default(),
         };
 
@@ -127,38 +137,27 @@ impl SearchState {
     /// Sets the active result option based on the target.
     pub fn set_active(&mut self, target: ActiveResult) {
         self.disable_all();
-        // self.
 
         match target {
             ActiveResult::Songs => {
-                if let Some(songs) = &mut self.results.songs {
-                    songs.table_state.active = true;
-                }
+                self.results.songs.table_state.active = true;
             }
             ActiveResult::Albums => {
-                if let Some(albums) = &mut self.results.albums {
-                    albums.table_state.active = true;
-                }
+                self.results.albums.table_state.active = true;
             }
             ActiveResult::Artists => {
-                if let Some(artists) = &mut self.results.artists {
-                    artists.table_state.active = true;
-                }
+                self.results.artists.table_state.active = true;
             }
-            ActiveResult::None => self.disable_all(),
+            ActiveResult::None => {}
         }
+        
+        self.results.active = target;
     }
 
     fn disable_all(&mut self) {
-        if let Some(songs) = &mut self.results.songs {
-            songs.table_state.active = false;
-        }
-        if let Some(albums) = &mut self.results.albums {
-            albums.table_state.active = false;
-        }
-        if let Some(artists) = &mut self.results.artists {
-            artists.table_state.active = false;
-        }
+        self.results.songs.table_state.active = false;
+        self.results.albums.table_state.active = false;
+        self.results.artists.table_state.active = false;
     }
 
     pub fn handle_char(&mut self, new_char: char) {
