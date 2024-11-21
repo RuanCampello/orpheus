@@ -15,7 +15,7 @@ use rspotify::model::device::Device;
 use rspotify::model::search::SearchResult;
 use rspotify::senum::SearchType;
 use std::io;
-use std::io::{Stdout, Write};
+use std::io::Stdout;
 use std::time::{Duration, Instant};
 
 /// Defines the page that should be rendered in main area.
@@ -174,8 +174,8 @@ impl State {
                 SearchResult::Artists(artists),
                 // SearchResult::Albums(albums),
             )) => {
-                self.search_state.results.songs = Some(ResultItem::new(tracks));
-                self.search_state.results.artists = Some(ResultItem::new(artists));
+                self.search_state.results.songs = ResultItem::new(tracks);
+                self.search_state.results.artists = ResultItem::new(artists);
                 // self.search_state.results.albums = Some(ResultItem::new(albums));
             }
             _ => {}

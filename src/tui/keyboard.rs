@@ -73,7 +73,7 @@ impl State {
                     self.playlist_state.set_active(!self.playlist_state.active)
                 }
                 's' => search_state.set_active(ActiveResult::Songs),
-                // 'a' => search_state.set_active(ActiveResult::Albums),
+                'a' => search_state.set_active(ActiveResult::Albums),
                 'd' => search_state.set_active(ActiveResult::Artists),
                 'e' => {
                     search_state.set_active(ActiveResult::None);
@@ -97,9 +97,7 @@ impl State {
                 self.search().await;
 
                 self.search_state.active = false;
-                if let Some(songs) = &mut self.search_state.results.songs {
-                    songs.table_state.active = true
-                }
+                self.search_state.set_active(ActiveResult::Songs);
 
                 self.tab = Tab::SearchResults;
             }
@@ -154,28 +152,14 @@ impl State {
             }
         }
 
-        if let Some(songs) = &mut self.search_state.results.songs {
-            if !songs.table_state.active {
-                return;
+        match self.search_state.results.active {
+            ActiveResult::Songs => {
+                Self::update_navigation(&mut self.search_state.results.songs.table_state, key)
             }
-
-            match key {
-                KeyCode::Enter => {
-                    let uri = (&*songs).get_selected_track_uri();
-                    self.play_selected_track(uri).await;
-                }
-                _ => Self::update_navigation(&mut songs.table_state, key),
+            ActiveResult::Artists => {
+                Self::update_navigation(&mut self.search_state.results.artists.table_state, key)
             }
-        } 
-        // else if let Some(albums) = &mut self.search_state.results.albums {
-        //     if albums.table_state.active {
-        //         Self::update_navigation(&mut albums.table_state, key);
-        //     }
-        // }
-        else if let Some(artists) = &mut self.search_state.results.artists {
-            if artists.table_state.active {
-                Self::update_navigation(&mut artists.table_state, key);
-            }
+            _ => {}
         }
     }
 

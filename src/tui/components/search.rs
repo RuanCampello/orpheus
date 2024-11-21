@@ -66,13 +66,13 @@ pub fn draw_search_input<'a>(frame: &'a mut Frame, state: &'a mut State, area: R
 }
 
 pub fn draw_search_results(frame: &mut Frame, state: &mut State, area: Rect) {
-    let [songs_area, artists_area] =
+    let [songs_area, lower_area] =
         Layout::vertical([Constraint::Percentage(50), Constraint::Percentage(50)]).areas(area);
-    // let [albums_area, artists_area] =
-    //     Layout::horizontal([Constraint::Percentage(50), Constraint::Percentage(50)])
-    //         .areas(lower_area);
+    let [albums_area, artists_area] =
+        Layout::horizontal([Constraint::Percentage(50), Constraint::Percentage(50)])
+            .areas(lower_area);
 
-    if let Some(songs) = &mut state.search_state.results.songs {
+    if let Some(songs) = &mut state.search_state.results.songs.data {
         const WIDTHS: &[Constraint] = &[
             Constraint::Percentage(40),
             Constraint::Percentage(25),
@@ -82,47 +82,59 @@ pub fn draw_search_results(frame: &mut Frame, state: &mut State, area: Rect) {
         const HEADERS: &[&str; 4] = &["Title", "Artist", "Album", "Time"];
 
         let songs_table = draw_results_table(
-            &songs.data.items,
+            &songs.items,
             "Songs",
             WIDTHS,
-            songs.table_state.active,
+            state.search_state.results.songs.table_state.active,
             HEADERS,
             None,
         );
 
-        frame.render_stateful_widget(songs_table, songs_area, &mut songs.table_state.state);
+        frame.render_stateful_widget(
+            songs_table,
+            songs_area,
+            &mut state.search_state.results.songs.table_state.state,
+        );
     }
 
-    // if let Some(albums) = &mut state.search_state.results.albums {
-    //     const WIDTHS: &[Constraint] = &[Constraint::Length(40), Constraint::Length(25)];
-    //     const HEADERS: &[&str; 2] = &["Title", "Artist"];
-    // 
-    //     let albums_table = draw_results_table(
-    //         &albums.data.items,
-    //         "Albums",
-    //         WIDTHS,
-    //         albums.table_state.active,
-    //         HEADERS,
-    //         None,
-    //     );
-    // 
-    //     frame.render_stateful_widget(albums_table, albums_area, &mut albums.table_state.state);
-    // }
+    if let Some(albums) = &mut state.search_state.results.albums.data {
+        const WIDTHS: &[Constraint] = &[Constraint::Length(40), Constraint::Length(25)];
+        const HEADERS: &[&str; 2] = &["Title", "Artist"];
 
-    if let Some(artists) = &mut state.search_state.results.artists {
+        let albums_table = draw_results_table(
+            &albums.items,
+            "Albums",
+            WIDTHS,
+            state.search_state.results.albums.table_state.active,
+            HEADERS,
+            None,
+        );
+
+        frame.render_stateful_widget(
+            albums_table,
+            albums_area,
+            &mut state.search_state.results.albums.table_state.state,
+        );
+    }
+
+    if let Some(artists) = &mut state.search_state.results.artists.data {
         const HEADERS: &[&str; 1] = &["Name"];
         const WIDTHS: &[Constraint] = &[Constraint::Length(50)];
 
         let artists_table = draw_results_table(
-            &artists.data.items,
+            &artists.items,
             "Artists",
             WIDTHS,
-            artists.table_state.active,
+            state.search_state.results.artists.table_state.active,
             HEADERS,
             None,
         );
 
-        frame.render_stateful_widget(artists_table, artists_area, &mut artists.table_state.state);
+        frame.render_stateful_widget(
+            artists_table,
+            artists_area,
+            &mut state.search_state.results.artists.table_state.state,
+        );
     }
 }
 
