@@ -11,7 +11,7 @@ use rspotify::model::track::FullTrack;
 pub(in crate::tui) enum ActiveResult {
     Songs,
     Artists,
-    Albums,
+    // Albums,
     #[default]
     None,
 }
@@ -24,7 +24,7 @@ pub(in crate::tui) struct ResultItem<T> {
 pub(in crate::tui) struct SearchResult {
     pub artists: Option<ResultItem<Page<FullArtist>>>,
     pub songs: Option<ResultItem<Page<FullTrack>>>,
-    pub albums: Option<ResultItem<Page<SimplifiedAlbum>>>,
+    // pub albums: Option<ResultItem<Page<SimplifiedAlbum>>>,
     pub active: ActiveResult,
 }
 
@@ -102,7 +102,7 @@ impl Navigable for TableStateExt {
 impl SearchState {
     pub fn new() -> Self {
         let results = SearchResult {
-            albums: None,
+            // albums: None,
             songs: None,
             artists: None,
             active: ActiveResult::default(),
@@ -135,11 +135,11 @@ impl SearchState {
                     songs.table_state.active = true;
                 }
             }
-            ActiveResult::Albums => {
-                if let Some(albums) = &mut self.results.albums {
-                    albums.table_state.active = true;
-                }
-            }
+            // ActiveResult::Albums => {
+            //     if let Some(albums) = &mut self.results.albums {
+            //         albums.table_state.active = true;
+            //     }
+            // }
             ActiveResult::Artists => {
                 if let Some(artists) = &mut self.results.artists {
                     artists.table_state.active = true;
@@ -153,9 +153,9 @@ impl SearchState {
         if let Some(songs) = &mut self.results.songs {
             songs.table_state.active = false;
         }
-        if let Some(albums) = &mut self.results.albums {
-            albums.table_state.active = false;
-        }
+        // if let Some(albums) = &mut self.results.albums {
+        //     albums.table_state.active = false;
+        // }
         if let Some(artists) = &mut self.results.artists {
             artists.table_state.active = false;
         }

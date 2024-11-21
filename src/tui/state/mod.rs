@@ -15,7 +15,7 @@ use rspotify::model::device::Device;
 use rspotify::model::search::SearchResult;
 use rspotify::senum::SearchType;
 use std::io;
-use std::io::Stdout;
+use std::io::{Stdout, Write};
 use std::time::{Duration, Instant};
 
 /// Defines the page that should be rendered in main area.
@@ -165,18 +165,18 @@ impl State {
         let query = self.search_state.input.as_str();
         let tracks_future = create_search_future!(self.client, query, SearchType::Track);
         let artists_future = create_search_future!(self.client, query, SearchType::Artist);
-        let albums_future = create_search_future!(self.client, query, SearchType::Album);
+        // let albums_future = create_search_future!(self.client, query, SearchType::Album);
 
         #[allow(clippy::single_match)]
-        match tokio::try_join!(tracks_future, artists_future, albums_future) {
+        match tokio::try_join!(tracks_future, artists_future) {
             Ok((
                 SearchResult::Tracks(tracks),
                 SearchResult::Artists(artists),
-                SearchResult::Albums(albums),
+                // SearchResult::Albums(albums),
             )) => {
                 self.search_state.results.songs = Some(ResultItem::new(tracks));
                 self.search_state.results.artists = Some(ResultItem::new(artists));
-                self.search_state.results.albums = Some(ResultItem::new(albums));
+                // self.search_state.results.albums = Some(ResultItem::new(albums));
             }
             _ => {}
         };
