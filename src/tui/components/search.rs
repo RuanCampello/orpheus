@@ -66,11 +66,11 @@ pub fn draw_search_input<'a>(frame: &'a mut Frame, state: &'a mut State, area: R
 }
 
 pub fn draw_search_results(frame: &mut Frame, state: &mut State, area: Rect) {
-    let [songs_area, lower_area] =
+    let [songs_area, artists_area] =
         Layout::vertical([Constraint::Percentage(50), Constraint::Percentage(50)]).areas(area);
-    let [albums_area, artists_area] =
-        Layout::horizontal([Constraint::Percentage(50), Constraint::Percentage(50)])
-            .areas(lower_area);
+    // let [albums_area, artists_area] =
+    //     Layout::horizontal([Constraint::Percentage(50), Constraint::Percentage(50)])
+    //         .areas(lower_area);
 
     if let Some(songs) = &mut state.search_state.results.songs.data {
         const WIDTHS: &[Constraint] = &[
@@ -97,25 +97,25 @@ pub fn draw_search_results(frame: &mut Frame, state: &mut State, area: Rect) {
         );
     }
 
-    if let Some(albums) = &mut state.search_state.results.albums.data {
-        const WIDTHS: &[Constraint] = &[Constraint::Length(40), Constraint::Length(25)];
-        const HEADERS: &[&str; 2] = &["Title", "Artist"];
-
-        let albums_table = draw_results_table(
-            &albums.items,
-            "Albums",
-            WIDTHS,
-            state.search_state.results.albums.table_state.active,
-            HEADERS,
-            None,
-        );
-
-        frame.render_stateful_widget(
-            albums_table,
-            albums_area,
-            &mut state.search_state.results.albums.table_state.state,
-        );
-    }
+    // if let Some(albums) = &mut state.search_state.results.albums.data {
+    //     const WIDTHS: &[Constraint] = &[Constraint::Length(40), Constraint::Length(25)];
+    //     const HEADERS: &[&str; 2] = &["Title", "Artist"];
+    // 
+    //     let albums_table = draw_results_table(
+    //         &albums.items,
+    //         "Albums",
+    //         WIDTHS,
+    //         state.search_state.results.albums.table_state.active,
+    //         HEADERS,
+    //         None,
+    //     );
+    // 
+    //     frame.render_stateful_widget(
+    //         albums_table,
+    //         albums_area,
+    //         &mut state.search_state.results.albums.table_state.state,
+    //     );
+    // }
 
     if let Some(artists) = &mut state.search_state.results.artists.data {
         const HEADERS: &[&str; 1] = &["Name"];

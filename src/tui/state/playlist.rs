@@ -81,7 +81,7 @@ impl PlaylistState {
         self.offset = 0;
     }
 
-    /// Returns the selected playlist on the sidebar if some.
+    /// Returns the selected playlist uri on the sidebar if some.
     pub fn selected_playlist_uri(&self) -> Option<&str> {
         let idx = self.state.selected().unwrap_or(0);
         let playlist = &self.playlists.get(idx)?.uri;

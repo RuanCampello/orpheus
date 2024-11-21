@@ -72,7 +72,7 @@ impl TableStateExt {
     }
 }
 
-impl Playable for &ResultItem<Page<FullTrack>> {
+impl Playable for ResultItem<Page<FullTrack>> {
     fn get_selected_track_uri(&self) -> Option<String> {
         let page = self.data.as_ref()?;
 
@@ -150,7 +150,7 @@ impl SearchState {
             }
             ActiveResult::None => {}
         }
-        
+
         self.results.active = target;
     }
 

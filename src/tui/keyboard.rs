@@ -154,6 +154,12 @@ impl State {
 
         match self.search_state.results.active {
             ActiveResult::Songs => {
+                if key.eq(&KeyCode::Enter) {
+                    let uri = self.search_state.results.songs.get_selected_track_uri();
+                    self.play_selected_track(uri).await;
+
+                    return;
+                };
                 Self::update_navigation(&mut self.search_state.results.songs.table_state, key)
             }
             ActiveResult::Artists => {
