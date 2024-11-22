@@ -31,11 +31,23 @@ impl PlayerState {
                 return;
             }
         }
-        
+
         self.image = Some(Image {
             ascii: image_url_to_ascii(url, &height, &width).unwrap_or_default(),
             image_url: url.to_string(),
             rendered_at_size: WindowSize { height, width },
         });
+    }
+
+    pub fn get_artist_name(&self) -> Option<&str> {
+        let Some(playing) = &self.playing else {
+            return None;
+        };
+
+        if let Some(artist) = playing.item.as_ref()?.artists.first() {
+            return Some(artist.name.as_str());
+        }
+
+        None
     }
 }

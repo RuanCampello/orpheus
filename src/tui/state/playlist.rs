@@ -105,7 +105,7 @@ impl PlaylistState {
             #[rustfmt::skip]
             KeyCode::Right if offset_step <= length => self.offset += offset_step,
             KeyCode::Left => self.offset = self.offset.saturating_sub(offset_step),
-            _ => unreachable!(),
+            _ => {}
         }
     }
 }
