@@ -14,11 +14,11 @@ impl State {
     pub(super) async fn handle_key(&mut self, key: KeyCode) {
         let on_playlist_page =
             self.tab.eq(&Tab::PlaylistPage) && self.playlist_state.selected_playlist.state.active;
-        let on_search_page = self.tab.eq(&Tab::SearchResults) || self.playlist_state.active;
+        let search_or_playlist = self.tab.eq(&Tab::SearchResults) || self.playlist_state.active;
 
         match key {
-            // search/playlist navigation
-            KeyCode::Up | KeyCode::Down | KeyCode::Enter if on_search_page => {
+            // search/playlist items navigation
+            KeyCode::Up | KeyCode::Down | KeyCode::Enter if search_or_playlist => {
                 self.navigate(key).await;
             }
 
@@ -55,7 +55,7 @@ impl State {
             KeyCode::Char(c) => self.handle_character(c).await,
 
             // search-specific actions
-            KeyCode::Esc | KeyCode::Enter | KeyCode::Backspace => {
+            KeyCode::Esc | KeyCode::Enter | KeyCode::Backspace if self.search_state.active => {
                 self.handle_search_control(key).await;
             }
 
@@ -90,11 +90,9 @@ impl State {
     }
 
     async fn handle_search_control(&mut self, key: KeyCode) {
-        let active = self.search_state.active;
-
         match key {
-            KeyCode::Esc | KeyCode::Backspace if active => self.search_state.update(key),
-            KeyCode::Enter if active => {
+            KeyCode::Esc | KeyCode::Backspace => self.search_state.update(key),
+            KeyCode::Enter => {
                 self.search().await;
 
                 self.search_state.active = false;
@@ -117,7 +115,7 @@ impl State {
             .spotify
             .user_playlist_tracks(
                 "spotify",
-                uri,
+                &uri,
                 None,
                 Some(self.playlist_state.offset_step),
                 Some(self.playlist_state.offset),
@@ -132,13 +130,13 @@ impl State {
     /// Handles the playlist sidebar and the search results navigation.
     async fn navigate(&mut self, key: KeyCode) {
         if self.playlist_state.active {
-            let selected_uri = self.playlist_state.as_ref().get_selected_track_uri();
+            let Some(uri) = self.playlist_state.as_ref().selected_playlist_uri() else {
+                return
+            };
 
-            if let Some(uri) = selected_uri {
-                match key {
-                    KeyCode::Enter => self.select_playlist(&uri).await,
-                    _ => Self::update_navigation(&mut self.playlist_state, key),
-                }
+            match key {
+                KeyCode::Enter => self.select_playlist(uri).await,
+                _ => Self::update_navigation(&mut self.playlist_state, key),
             }
         }
 

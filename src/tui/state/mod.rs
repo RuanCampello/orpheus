@@ -107,10 +107,11 @@ impl State {
         let size = terminal.size()?;
         self.handle_resize(size.width, size.height);
 
-        // if let Some(first_playlist) = self.playlist_state.as_ref().playlists.first() {
-        //     let uri = first_playlist.uri.as_str();
-        //     self.select_playlist(uri).await;
-        // }
+        // tries to set the first playlist as selected on launch.
+        if let Some(first_playlist) = self.playlist_state.as_ref().playlists.first() {
+            let uri = first_playlist.uri.to_string();
+            self.select_playlist(uri).await;
+        }
 
         loop {
             terminal.draw(|frame| draw(frame, self))?;
@@ -140,12 +141,13 @@ impl State {
     }
 
     /// Fetch a given playlist uri and updates the respective states.
-    pub(super) async fn select_playlist(&mut self, uri: &str) {
-        let Ok(playlist) = self.client.spotify.playlist(uri, None, None).await else {
+    pub(super) async fn select_playlist(&mut self, uri: String) {
+        let Ok(playlist) = self.client.spotify.playlist(&uri, None, None).await else {
             return;
         };
 
         self.tab = Tab::PlaylistPage;
+        self.playlist_state.active = false;
         self.playlist_state.selected_playlist.state.max_size = playlist.tracks.items.len();
         self.playlist_state.selected_playlist.state.active = true;
         self.playlist_state.selected_playlist.playlist = Some(playlist);

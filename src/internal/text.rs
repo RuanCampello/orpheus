@@ -6,6 +6,7 @@ use ratatui::text::{Line, StyledGrapheme};
 use ratatui::widgets::Widget;
 use std::cmp::min;
 
+#[allow(dead_code)]
 #[derive(Default)]
 pub enum Size {
     #[default]
@@ -167,6 +168,7 @@ pub struct Text<'a> {
     alignment: Alignment,
 }
 
+#[allow(unused)]
 impl<'a> Text<'a> {
     pub fn new() -> Text<'a> {
         static EMPTY_LINES: &[&Line] = &[];
