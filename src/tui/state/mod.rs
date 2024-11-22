@@ -14,7 +14,7 @@ use ratatui::Terminal;
 use rspotify::model::device::Device;
 use rspotify::model::search::SearchResult;
 use rspotify::senum::SearchType;
-use std::io::{self, Stdout};
+use std::io::{self, Stdout, Write};
 use std::time::{Duration, Instant};
 
 /// Defines the page that should be rendered in main area.

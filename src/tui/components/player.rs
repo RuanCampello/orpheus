@@ -2,12 +2,36 @@ use crate::internal::text::{Size, Text};
 use crate::tui::components::{pad, BlockExt};
 use crate::tui::state::State;
 use deunicode::deunicode;
-use ratatui::layout::{Alignment, Constraint, Layout, Rect};
+use ratatui::layout::{Constraint, Layout, Rect};
 use ratatui::style::{Color, Style};
-use ratatui::text::Line;
+use ratatui::text::{Line, Text as UIText};
 use ratatui::widgets::{Block, Paragraph};
 use ratatui::Frame;
 use std::ops::Div;
+
+const PLAY_ICON: [&str; 9] = [
+    "████████  ",
+    "████████████",
+    "█████  ███████",
+    "██████    ██████",
+    "██████      ████",
+    "██████    ██████",
+    "██████  ████████",
+    "████████████",
+    "████████",
+];
+
+const PAUSE_ICON: [&str; 9] = [
+    "██████████  ",
+    "██████████████",
+    "██████  ██  ██████",
+    "███████  ██  ███████",
+    "███████  ██  ███████",
+    "███████  ██  ███████",
+    "██████  ██  ██████",
+    "██████████████",
+    "██████████",
+];
 
 pub fn draw_player<'a>(frame: &'a mut Frame, state: &'a mut State, area: Rect) {
     let [image_area, remaining_area] =
@@ -38,8 +62,19 @@ pub fn draw_player<'a>(frame: &'a mut Frame, state: &'a mut State, area: Rect) {
         frame.render_widget(title, title_area);
 
         let artist = state.player.get_artist_name().unwrap_or("Unknown");
-        let paragraph = Paragraph::new(vec![Line::from(artist)]).alignment(Alignment::Center);
+        let pause_icon = get_text_for_icon(&PAUSE_ICON);
+        let play_icon = get_text_for_icon(&PLAY_ICON);
 
-        frame.render_widget(paragraph, remaining_area);
+        #[rustfmt::skip]
+        let status_icon = if playing.is_playing { pause_icon } else { play_icon };
+
+        let info_text =
+            ratatui::text::Text::from(format!("\n「 {artist} 」\n\n {status_icon}")).centered();
+
+        frame.render_widget(info_text, remaining_area);
     }
+}
+
+fn get_text_for_icon<'a>(icon: &'a [&str]) -> UIText<'a> {
+    UIText::from(icon.iter().map(|s| Line::from(*s)).collect::<Vec<Line>>())
 }
