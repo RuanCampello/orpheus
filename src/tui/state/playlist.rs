@@ -20,11 +20,17 @@ pub(in crate::tui) struct SelectedPlaylist {
     pub state: TableStateExt,
 }
 
+impl AsRef<PlaylistState> for PlaylistState {
+    fn as_ref(&self) -> &PlaylistState {
+        self
+    }
+}
+
 pub trait Playable {
     fn get_selected_track_uri(&self) -> Option<String>;
 }
 
-impl Playable for PlaylistState {
+impl Playable for &PlaylistState {
     fn get_selected_track_uri(&self) -> Option<String> {
         let selected_playlist = self.selected_playlist.playlist.as_ref()?;
         let idx = self.selected_playlist.state.state.selected().unwrap_or(0);
@@ -66,7 +72,7 @@ impl PlaylistState {
         playlist.tracks = new_tracks;
     }
 
-    pub fn update(&mut self, new_playlist: Option<FullPlaylist>) {
+    fn update(&mut self, new_playlist: Option<FullPlaylist>) {
         let size = new_playlist
             .as_ref()
             .map(|playlist| playlist.tracks.items.len())
@@ -97,11 +103,8 @@ impl PlaylistState {
 
         match key {
             #[rustfmt::skip]
-            KeyCode::Right => if offset_step <= length {
-                self.offset += offset_step;
-            },
+            KeyCode::Right if offset_step <= length => self.offset += offset_step,
             KeyCode::Left => self.offset = self.offset.saturating_sub(offset_step),
-
             _ => unreachable!(),
         }
     }

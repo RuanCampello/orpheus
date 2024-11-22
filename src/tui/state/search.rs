@@ -148,7 +148,7 @@ impl SearchState {
             ActiveResult::Artists => {
                 self.results.artists.table_state.active = true;
             }
-            ActiveResult::None => {}
+            ActiveResult::None => self.disable_all(),
         }
 
         self.results.active = target;

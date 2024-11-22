@@ -33,7 +33,7 @@ impl State {
             {
                 match key {
                     KeyCode::Enter => {
-                        let uri = self.playlist_state.get_selected_track_uri();
+                        let uri = self.playlist_state.as_ref().get_selected_track_uri();
                         self.play_selected_track(uri).await;
                     }
                     KeyCode::Left | KeyCode::Right => {
@@ -76,6 +76,7 @@ impl State {
                 'a' => search_state.set_active(ActiveResult::Albums),
                 'd' => search_state.set_active(ActiveResult::Artists),
                 'e' => {
+                    self.playlist_state.selected_playlist.state.active = false;
                     search_state.set_active(ActiveResult::None);
                     search_state.active = !search_state.active
                 }
@@ -131,24 +132,13 @@ impl State {
     /// Handles the playlist sidebar and the search results navigation.
     async fn navigate(&mut self, key: KeyCode) {
         if self.playlist_state.active {
-            match key {
-                KeyCode::Enter => {
-                    let Some(uri) = self.playlist_state.selected_playlist_uri() else {
-                        return;
-                    };
+            let selected_uri = self.playlist_state.as_ref().get_selected_track_uri();
 
-                    let selected_playlist = self
-                        .client
-                        .spotify
-                        .playlist(uri, None, None)
-                        .await
-                        .map(Some)
-                        .unwrap_or(None);
-
-                    self.playlist_state.update(selected_playlist);
-                    self.tab = Tab::PlaylistPage
+            if let Some(uri) = selected_uri {
+                match key {
+                    KeyCode::Enter => self.select_playlist(&uri).await,
+                    _ => Self::update_navigation(&mut self.playlist_state, key),
                 }
-                _ => Self::update_navigation(&mut self.playlist_state, key),
             }
         }
 
