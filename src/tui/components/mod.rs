@@ -6,10 +6,19 @@ pub(super) mod volume;
 use crate::tui::colours::Palette;
 use ratatui::style::{Style, Stylize};
 use ratatui::widgets::{Block, BorderType, Borders, List, Row};
+use std::ops::{Div, Rem};
 
 fn pad(content: &str, size: usize) -> String {
     let padding = " ".repeat(size);
     format!("{padding}{content}{padding}")
+}
+
+fn time_from_ms(ms: &u32) -> String {
+    let secs = ms.div(1000);
+    let minutes = secs.div(60);
+    let seconds = secs.rem(&60);
+
+    format!("{minutes}:{seconds:02}")
 }
 
 trait ToRow<'a> {

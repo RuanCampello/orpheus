@@ -1,5 +1,5 @@
 use crate::tui::components::search::draw_results_table;
-use crate::tui::components::{pad, BlockExt, ListExt, ToRow};
+use crate::tui::components::{pad, time_from_ms, BlockExt, ListExt, ToRow};
 use crate::tui::state::playlist::SelectedPlaylist;
 use crate::tui::State;
 use ratatui::layout::{Constraint, Rect};
@@ -7,17 +7,12 @@ use ratatui::text::Span;
 use ratatui::widgets::{Block, BorderType, List, ListItem, Row};
 use ratatui::{text, Frame};
 use rspotify::model::playlist::PlaylistTrack;
-use std::time::Duration;
 
 impl<'a> ToRow<'a> for &'a PlaylistTrack {
     fn to_row(&self, idx: usize) -> Row<'a> {
         let track = self.track.as_ref().unwrap();
         let album = &track.album.name;
-
-        let duration = Duration::from_millis(track.duration_ms as u64);
-        let minutes = duration.as_secs() / 60;
-        let seconds = duration.as_secs() % 60;
-        let time = format!("{minutes}:{seconds:02}");
+        let time = time_from_ms(&track.duration_ms);
 
         let artists = self
             .track

@@ -1,11 +1,12 @@
 use crate::internal::text::{Size, Text};
-use crate::tui::components::{pad, BlockExt};
+use crate::tui::colours::Palette;
+use crate::tui::components::{pad, time_from_ms, BlockExt};
 use crate::tui::state::State;
 use deunicode::deunicode;
 use ratatui::layout::{Constraint, Layout, Rect};
 use ratatui::style::{Color, Style};
 use ratatui::text::{Line, Text as UIText};
-use ratatui::widgets::{Block, Paragraph};
+use ratatui::widgets::{Block, LineGauge, Paragraph};
 use ratatui::Frame;
 use std::ops::Div;
 
@@ -51,7 +52,7 @@ pub fn draw_player<'a>(frame: &'a mut Frame, state: &'a mut State, area: Rect) {
         };
 
         let padding = ((title_area.width / 4) as usize).saturating_sub(song_name.len()) as f32;
-        let padding = padding.div(1.25).round().min(5.0) as usize;
+        let padding = padding.div(1.5).round().min(5.0) as usize;
 
         let title = &[&Line::from(pad(song_name, padding))];
         let title = Text::new().size(&Size::Quarter).lines(title);
@@ -63,12 +64,41 @@ pub fn draw_player<'a>(frame: &'a mut Frame, state: &'a mut State, area: Rect) {
 
         #[rustfmt::skip]
         let status_icon = if playing.is_playing { pause_icon } else { play_icon };
+        let [info_area, progress_bar] =
+            Layout::vertical([Constraint::Min(0), Constraint::Length(4)]).areas(remaining_area);
 
         let info_text =
             ratatui::text::Text::from(format!("\n「 {artist} 」\n\n {status_icon}")).centered();
 
-        frame.render_widget(info_text, remaining_area);
+        frame.render_widget(info_text, info_area);
+
+        draw_progress_line(
+            frame,
+            playing.progress_ms.as_ref().unwrap(),
+            &playing.item.as_ref().unwrap().duration_ms,
+            progress_bar,
+        );
     }
+}
+
+fn draw_progress_line<'a>(frame: &'a mut Frame, progress: &'a u32, duration: &'a u32, area: Rect) {
+    let time = time_from_ms(progress);
+    let progress = *progress as f64;
+    let ratio = progress.div(*duration as f64);
+
+    let duration = time_from_ms(duration);
+
+    let [gauge_area, duration_area] =
+        Layout::horizontal([Constraint::Min(0), Constraint::Length(6)]).areas(area);
+
+    let gauge = LineGauge::default()
+        .filled_style(Style::new().fg(Palette::Secondary.into()))
+        .ratio(ratio)
+        .label(time);
+    let duration = Line::from(duration).centered();
+
+    frame.render_widget(gauge, gauge_area);
+    frame.render_widget(duration, duration_area);
 }
 
 fn get_text_for_icon<'a>(icon: &'a [&str]) -> UIText<'a> {
