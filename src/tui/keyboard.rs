@@ -68,6 +68,7 @@ impl State {
 
         match search_state.active {
             false => match c {
+                ' ' => self.toggle_playing_state().await,
                 '1' => {
                     search_state.set_active(ActiveResult::None);
                     self.playlist_state.set_active(!self.playlist_state.active)
@@ -131,7 +132,7 @@ impl State {
     async fn navigate(&mut self, key: KeyCode) {
         if self.playlist_state.active {
             let Some(uri) = self.playlist_state.as_ref().selected_playlist_uri() else {
-                return
+                return;
             };
 
             match key {

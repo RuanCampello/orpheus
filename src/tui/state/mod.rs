@@ -187,11 +187,7 @@ impl State {
 
         #[allow(clippy::single_match)]
         match tokio::try_join!(tracks_future, artists_future) {
-            Ok((
-                SearchResult::Tracks(tracks),
-                SearchResult::Artists(artists),
-                // SearchResult::Albums(albums),
-            )) => {
+            Ok((SearchResult::Tracks(tracks), SearchResult::Artists(artists))) => {
                 self.search_state.results.songs = ResultItem::new(tracks);
                 self.search_state.results.artists = ResultItem::new(artists);
                 // self.search_state.results.albums = Some(ResultItem::new(albums));
@@ -219,6 +215,27 @@ impl State {
             .is_ok()
         {
             self.update_playing_state().await
+        };
+    }
+
+    pub(super) async fn toggle_playing_state(&mut self) {
+        let Some(playing) = &self.player.playing else {
+            return;
+        };
+        let device_id = Some(self.device.id.to_string());
+
+        let result = match playing.is_playing {
+            true => self.client.spotify.pause_playback(device_id).await,
+            false => {
+                self.client
+                    .spotify
+                    .start_playback(device_id, None, None, None, playing.progress_ms)
+                    .await
+            }
+        };
+
+        if result.is_ok() {
+            self.update_playing_state().await;
         };
     }
 

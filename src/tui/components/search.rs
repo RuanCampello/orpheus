@@ -1,5 +1,5 @@
 use crate::tui::colours::Palette;
-use crate::tui::components::{pad, BlockExt, ToRow};
+use crate::tui::components::{pad, time_from_ms, BlockExt, ToRow};
 use crate::tui::state::State;
 use ratatui::layout::{Alignment, Constraint, Layout, Position, Rect};
 use ratatui::style::{Style, Stylize};
@@ -8,13 +8,10 @@ use ratatui::Frame;
 use rspotify::model::album::SimplifiedAlbum;
 use rspotify::model::artist::FullArtist;
 use rspotify::model::track::FullTrack;
-use std::time::Duration;
 
 impl<'a> ToRow<'a> for FullTrack {
     fn to_row(&self, _idx: usize) -> Row<'a> {
-        let duration = Duration::from_millis(self.duration_ms as u64);
-        let minutes = duration.as_secs() / 60;
-        let seconds = duration.as_secs() % 60;
+        let time = time_from_ms(&self.duration_ms);
 
         Row::new(vec![
             self.name.to_string(),
@@ -24,7 +21,7 @@ impl<'a> ToRow<'a> for FullTrack {
                 .unwrap_or(&String::new())
                 .to_string(),
             self.album.name.to_string(),
-            format!("{minutes:02}:{seconds:02}"),
+            time,
         ])
     }
 }
