@@ -34,19 +34,25 @@ pub(super) enum VolumeAction {
 
 /// Interface that reflects and calls the client in order to generate the UI.
 pub(crate) struct State {
-    pub tab: Tab,
-
-    pub client: Client,
     config: Config,
+
+    pub tab: Tab,
+    pub client: Client,
 
     pub(in crate::tui) playlist_state: PlaylistState,
     pub(in crate::tui) device: Device,
+    pub(in crate::tui) window: WindowSize,
+    pub(in crate::tui) lyrics_state: LyricState,
 
     pub(super) search_state: SearchState,
     pub(super) should_quit: bool,
     pub(super) player: PlayerState,
+}
 
-    pub(in crate::tui) window: WindowSize,
+#[derive(Default)]
+pub(in crate::tui) struct LyricState {
+    pub active: bool,
+    pub lyrics: String,
 }
 
 pub(in crate::tui) struct WindowSize {
@@ -82,6 +88,7 @@ impl State {
             device: device.expect("Failed to get your device"),
             playlist_state,
             tab: Tab::default(),
+            lyrics_state: LyricState::default(),
             player: PlayerState::new(),
             search_state: SearchState::new(),
             should_quit: false,
@@ -102,7 +109,7 @@ impl State {
 
         // fetches the currently playing state on the launch.
         self.update_playing_state().await;
-        self.get_selected_song_lyrics().await;
+        self.get_current_song_lyrics().await;
 
         // updates the window size on first launch.
         let size = terminal.size()?;
@@ -179,6 +186,7 @@ impl State {
     /// Manual currently playing update.
     pub(super) async fn update_playing_state(&mut self) {
         self.get_playing_state().await;
+        self.get_current_song_lyrics().await;
     }
 
     pub(super) async fn search(&mut self) {
@@ -259,18 +267,20 @@ impl State {
         }
     }
 
-    pub(super) async fn get_selected_song_lyrics(&self) {
+    /// Updates the `LyricState` based on the playing track.
+    pub(super) async fn get_current_song_lyrics(&mut self) {
         let Some(song) = &self.player.playing else {
             return;
         };
-        
-        if let Ok(lyric) = self
-            .client
-            .lyra
-            .get_song_lyrics(&song.item.as_ref().unwrap().name)
-            .await
-        {
-            println!("{lyric}")
+        let Some(artist_name) = self.player.get_artist_name() else {
+            return;
+        };
+
+        let name = &song.item.as_ref().unwrap().name;
+        let song_id = &format!("{name} {artist_name}");
+
+        if let Ok(lyrics) = self.client.lyra.get_song_lyrics(song_id).await {
+            self.lyrics_state.lyrics = lyrics;
         };
     }
 

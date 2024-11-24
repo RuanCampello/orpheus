@@ -1,12 +1,12 @@
 use crate::internal::text::{Size, Text};
 use crate::tui::colours::Palette;
 use crate::tui::components::{pad, time_from_ms, BlockExt};
-use crate::tui::state::State;
+use crate::tui::state::{LyricState, State};
 use deunicode::deunicode;
 use ratatui::layout::{Constraint, Layout, Rect};
 use ratatui::style::{Color, Style};
 use ratatui::text::{Line, Text as UIText};
-use ratatui::widgets::{Block, LineGauge, Paragraph};
+use ratatui::widgets::{Block, LineGauge, Padding, Paragraph, Wrap};
 use ratatui::Frame;
 use std::ops::Div;
 
@@ -99,6 +99,24 @@ fn draw_progress_line<'a>(frame: &'a mut Frame, progress: &'a u32, duration: &'a
 
     frame.render_widget(gauge, gauge_area);
     frame.render_widget(duration, duration_area);
+}
+
+pub fn draw_lyrics(frame: &mut Frame, lyrics: &LyricState, area: Rect) {
+    if !lyrics.active {
+        return;
+    }
+
+    let paragraph = Paragraph::new(lyrics.lyrics.as_str())
+        .left_aligned()
+        .wrap(Wrap { trim: false })
+        .block(
+            Block::new()
+                .secondary_border()
+                .title(pad("Lyrics", 2))
+                .padding(Padding::proportional(1)),
+        );
+
+    frame.render_widget(paragraph, area)
 }
 
 fn get_text_for_icon<'a>(icon: &'a [&str]) -> UIText<'a> {

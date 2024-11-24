@@ -1,7 +1,7 @@
-pub(super) mod player;
-pub(super) mod playlist;
-pub(super) mod search;
-pub(super) mod volume;
+pub(in crate::tui) mod player;
+pub(in crate::tui) mod playlist;
+pub(in crate::tui) mod search;
+pub(in crate::tui) mod volume;
 
 use crate::tui::colours::Palette;
 use ratatui::style::{Style, Stylize};

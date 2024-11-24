@@ -72,21 +72,6 @@ impl PlaylistState {
         playlist.tracks = new_tracks;
     }
 
-    fn update(&mut self, new_playlist: Option<FullPlaylist>) {
-        let size = new_playlist
-            .as_ref()
-            .map(|playlist| playlist.tracks.items.len())
-            .unwrap_or_default();
-
-        self.selected_playlist.playlist = new_playlist;
-        self.active = false;
-        self.selected_playlist.state.active = true;
-        self.selected_playlist.state.max_size = size;
-        // resets the offset and selects the first track when changing playlists
-        self.selected_playlist.state.state.select(Some(0));
-        self.offset = 0;
-    }
-
     /// Returns the selected playlist uri on the sidebar if some.
     pub fn selected_playlist_uri(&self) -> Option<String> {
         let idx = self.state.selected().unwrap_or(0);

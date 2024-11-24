@@ -1,4 +1,4 @@
-use crate::tui::components::player::draw_player;
+use crate::tui::components::player::{draw_lyrics, draw_player};
 use crate::tui::components::playlist::{draw_playlist_screen, draw_playlists_sidebar};
 use crate::tui::components::search::{draw_search_input, draw_search_results};
 use crate::tui::components::volume::draw_volume_widget;
@@ -27,6 +27,13 @@ fn draw(frame: &mut Frame, state: &mut State) {
     draw_search_input(frame, state, search_area);
     draw_volume_widget(frame, state, volume_area);
 
+    let [main_area, lyrics_area] = if state.lyrics_state.active {
+        Layout::horizontal([Constraint::Percentage(65), Constraint::Percentage(35)])
+            .areas(main_area)
+    } else {
+        Layout::horizontal([Constraint::Min(0), Constraint::Length(0)]).areas(main_area)
+    };
+
     #[allow(clippy::op_ref)]
     match state.tab {
         Tab::SearchResults => draw_search_results(frame, state, main_area),
@@ -42,4 +49,5 @@ fn draw(frame: &mut Frame, state: &mut State) {
 
     draw_playlists_sidebar(frame, state, playlist_area);
     draw_player(frame, state, queue_area);
+    draw_lyrics(frame, &state.lyrics_state, lyrics_area)
 }

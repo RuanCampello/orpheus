@@ -4,6 +4,7 @@ use crate::internal::lyrics::model::{SearchResponse, SearchResponseBody};
 use reqwest::header::{HeaderMap, HeaderValue, AUTHORIZATION};
 use reqwest::Client;
 use scraper::{Html, Selector};
+use std::io::Write;
 use thiserror::Error;
 
 #[derive(Debug, Error)]
@@ -70,9 +71,10 @@ impl Lyra {
 
         let lyrics = html
             .select(&selector)
-            .map(|element| element.text().collect::<Vec<_>>().join("\n"))
+            .flat_map(|element| element.text())
+            .filter(|line| !line.trim_start().starts_with('['))
             .collect::<Vec<_>>()
-            .join("\n\n");
+            .join("\n");
 
         Ok(lyrics)
     }
