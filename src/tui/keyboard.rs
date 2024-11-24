@@ -76,6 +76,7 @@ impl State {
                 's' => search_state.set_active(ActiveResult::Songs),
                 'a' => search_state.set_active(ActiveResult::Albums),
                 'd' => search_state.set_active(ActiveResult::Artists),
+                // 'l' => self.get_selected_song_lyrics().await,
                 'e' => {
                     self.playlist_state.selected_playlist.state.active = false;
                     search_state.set_active(ActiveResult::None);

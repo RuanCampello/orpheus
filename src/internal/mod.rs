@@ -1,7 +1,9 @@
 pub mod config;
 pub(super) mod image;
+mod lyrics;
 pub(super) mod text;
 
+use crate::internal::lyrics::Lyra;
 use rspotify::client::Spotify;
 use rspotify::oauth2::{SpotifyClientCredentials, SpotifyOAuth, TokenInfo};
 use rspotify::util::{process_token, request_token};
@@ -12,12 +14,17 @@ use std::time::{Duration, SystemTime};
 
 pub(super) struct Client {
     pub spotify: Spotify,
+    pub lyra: Lyra,
     oauth: SpotifyOAuth,
 }
 
 impl Client {
     pub fn new(spotify: Spotify, oauth: SpotifyOAuth) -> Self {
-        Self { spotify, oauth }
+        Self {
+            spotify,
+            oauth,
+            lyra: Lyra::new(),
+        }
     }
 }
 

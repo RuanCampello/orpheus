@@ -22,7 +22,7 @@ impl PlayerState {
     }
 
     /// Create and update ascii image if the window size or the image source has changed.
-    pub fn update_current_image(&mut self, url: &str, height: u16, width: u16) {
+    pub async fn update_current_image(&mut self, url: &str, height: u16, width: u16) {
         if let Some(current_image) = &self.image {
             let same_size = current_image.rendered_at_size.height == height
                 && current_image.rendered_at_size.width == width;
@@ -33,7 +33,7 @@ impl PlayerState {
         }
 
         self.image = Some(Image {
-            ascii: image_url_to_ascii(url, &height, &width).unwrap_or_default(),
+            ascii: image_url_to_ascii(url, &height, &width).await.unwrap_or_default(),
             image_url: url.to_string(),
             rendered_at_size: WindowSize { height, width },
         });

@@ -4,13 +4,13 @@ use std::io::Cursor;
 
 const ASCII_CHARS: &[u8] = b"#+=-|:. ";
 
-pub(crate) fn image_url_to_ascii<'a>(
+pub(crate) async fn image_url_to_ascii<'a>(
     url: &'a str,
     window_height: &'a u16,
     window_width: &'a u16,
 ) -> Result<String, Box<dyn std::error::Error>> {
-    let response = reqwest::blocking::get(url)?;
-    let image_data = response.bytes()?;
+    let response = reqwest::get(url).await?;
+    let image_data = response.bytes().await?;
 
     let mut image = ImageReader::new(Cursor::new(image_data))
         .with_guessed_format()?

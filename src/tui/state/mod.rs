@@ -14,7 +14,7 @@ use ratatui::Terminal;
 use rspotify::model::device::Device;
 use rspotify::model::search::SearchResult;
 use rspotify::senum::SearchType;
-use std::io::{self, Stdout, Write};
+use std::io::{self, Stdout};
 use std::time::{Duration, Instant};
 
 /// Defines the page that should be rendered in main area.
@@ -102,6 +102,7 @@ impl State {
 
         // fetches the currently playing state on the launch.
         self.update_playing_state().await;
+        self.get_selected_song_lyrics().await;
 
         // updates the window size on first launch.
         let size = terminal.size()?;
@@ -168,7 +169,8 @@ impl State {
                 .unwrap_or("default_image_url");
 
             self.player
-                .update_current_image(image_url, self.window.height, self.window.width);
+                .update_current_image(image_url, self.window.height, self.window.width)
+                .await;
 
             self.player.playing = playing;
         }
@@ -255,6 +257,21 @@ impl State {
         {
             self.device.volume_percent = volume;
         }
+    }
+
+    pub(super) async fn get_selected_song_lyrics(&self) {
+        let Some(song) = &self.player.playing else {
+            return;
+        };
+        
+        if let Ok(lyric) = self
+            .client
+            .lyra
+            .get_song_lyrics(&song.item.as_ref().unwrap().name)
+            .await
+        {
+            println!("{lyric}")
+        };
     }
 
     fn handle_resize(&mut self, x: u16, y: u16) {
