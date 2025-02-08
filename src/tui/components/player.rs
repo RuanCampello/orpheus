@@ -9,12 +9,9 @@ use ratatui::style::{Color, Style, Stylize};
 use ratatui::text::Line;
 use ratatui::widgets::{Block, BorderType, Borders, LineGauge, Padding, Paragraph, Wrap};
 use ratatui::Frame;
-use std::fs::File;
 use std::ops::Div;
 
 pub fn draw_player<'a>(frame: &'a mut Frame, state: &'a mut State, area: Rect) {
-    let mut colour = File::create("colours.txt").unwrap();
-
     if let Some(playing) = &state.player.playing {
         let [image_area, remaining_area] =
             Layout::vertical([Constraint::Percentage(50), Constraint::Min(0)]).areas(area);
