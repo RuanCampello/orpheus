@@ -4,7 +4,6 @@ use crate::internal::lyrics::model::{SearchResponse, SearchResponseBody};
 use reqwest::header::{HeaderMap, HeaderValue, AUTHORIZATION};
 use reqwest::Client;
 use scraper::{Html, Selector};
-use std::io::Write;
 use thiserror::Error;
 
 #[derive(Debug, Error)]
@@ -67,7 +66,7 @@ impl Lyra {
             .await?;
 
         let html = Html::parse_document(&html);
-        let selector = Selector::parse("div[class*='Lyrics__Container'").unwrap();
+        let selector = Selector::parse("div[data-lyrics-container='true']").unwrap();
 
         let lyrics = html
             .select(&selector)
