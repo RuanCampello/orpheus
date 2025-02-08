@@ -49,5 +49,5 @@ fn draw(frame: &mut Frame, state: &mut State) {
 
     draw_playlists_sidebar(frame, state, playlist_area);
     draw_player(frame, state, queue_area);
-    draw_lyrics(frame, &state.lyrics_state, state.player.image.as_ref(), lyrics_area)
+    draw_lyrics(frame, &mut state.lyrics_state, state.player.image.as_ref(), lyrics_area)
 }

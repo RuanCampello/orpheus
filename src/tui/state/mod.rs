@@ -16,6 +16,7 @@ use rspotify::model::search::SearchResult;
 use rspotify::senum::SearchType;
 use std::io::{self, Stdout};
 use std::time::{Duration, Instant};
+use ratatui::widgets::ScrollbarState;
 
 /// Defines the page that should be rendered in the main area.
 #[derive(PartialEq, Debug, Default)]
@@ -51,6 +52,7 @@ pub(crate) struct State {
 
 #[derive(Default)]
 pub(in crate::tui) struct LyricState {
+    pub scrollbar_state: ScrollbarState,
     pub active: bool,
     pub lyrics: String,
 }

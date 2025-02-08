@@ -7,7 +7,10 @@ use deunicode::deunicode;
 use ratatui::layout::{Constraint, Layout, Rect};
 use ratatui::style::{Color, Style, Stylize};
 use ratatui::text::Line;
-use ratatui::widgets::{Block, BorderType, Borders, LineGauge, Padding, Paragraph, Wrap};
+use ratatui::widgets::{
+    Block, BorderType, Borders, LineGauge, Padding, Paragraph, Scrollbar, ScrollbarOrientation,
+    Wrap,
+};
 use ratatui::Frame;
 use std::ops::Div;
 
@@ -92,7 +95,7 @@ fn draw_progress_line<'a>(
 
 pub fn draw_lyrics(
     frame: &mut Frame,
-    lyrics: &LyricState,
+    lyrics: &mut LyricState,
     image_state: Option<&Image>,
     area: Rect,
 ) {
@@ -101,6 +104,9 @@ pub fn draw_lyrics(
     }
 
     let (r, g, b) = image_state.unwrap().colour;
+
+    let scrollbar = Scrollbar::new(ScrollbarOrientation::VerticalRight);
+    lyrics.scrollbar_state = lyrics.scrollbar_state.content_length(lyrics.lyrics.len());
 
     let paragraph = Paragraph::new(lyrics.lyrics.as_str())
         .fg(Color::Rgb(r, g, b))
@@ -113,7 +119,9 @@ pub fn draw_lyrics(
                 .title(pad("Lyrics", 2))
                 .title_style(Style::new().bold())
                 .padding(Padding::proportional(1)),
-        );
+        )
+        .scroll((0, 0));
 
-    frame.render_widget(paragraph, area)
+    frame.render_widget(paragraph, area);
+    frame.render_stateful_widget(scrollbar, area, &mut lyrics.scrollbar_state);
 }
