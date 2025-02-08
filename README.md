@@ -8,10 +8,11 @@
 ## Installation
 
 1. Clone this repository:
-   ```sh
-   git clone https://github.com/RuanCampello/orpheus.git
-   cd orpheus
-   ```
+
+```sh
+git clone https://github.com/RuanCampello/orpheus.git
+cd orpheus
+```
 
 2. Environment Variables:
 
@@ -34,10 +35,13 @@ RSPOTIFY_REDIRECT_URI=http://localhost:8888/callback
 
 3. Run the Application:
 
-``cargo run``
+```sh
+cargo run
+```
 
 > [!NOTE]
-> Make sure to have a Spotify client open when launching the TUI. It's a limitation of Spotify's web API. It can be a desktop app, the web client or the Spotify Daemon
+> Make sure to have a Spotify client open when launching the TUI. It's a limitation of Spotify's web API. It can be a
+> desktop app, the web client or the Spotify Daemon
 
 
 Checkout the Spotify Daemon [here](https://github.com/Spotifyd/spotifyd).
