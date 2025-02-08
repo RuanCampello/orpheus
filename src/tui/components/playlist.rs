@@ -45,7 +45,7 @@ pub fn draw_playlists_sidebar<'a>(frame: &'a mut Frame, state: &'a mut State, ar
         .playlist_state
         .playlists
         .iter()
-        .take(10)
+        // .take(10)
         .map(|i| ListItem::new(vec![text::Line::from(Span::raw(&i.name))]))
         .collect();
 

@@ -14,7 +14,7 @@ use ratatui::Terminal;
 use rspotify::model::device::Device;
 use rspotify::model::search::SearchResult;
 use rspotify::senum::SearchType;
-use std::io::{self, Stdout};
+use std::io::{self, Stdout, Write};
 use std::time::{Duration, Instant};
 
 /// Defines the page that should be rendered in main area.
@@ -68,10 +68,10 @@ macro_rules! create_search_future {
 
 impl State {
     pub async fn new(client: Client, config: Config) -> Self {
-        let playlists_future = client.spotify.current_user_playlists(50, 0);
-        let device_future = client.spotify.device();
+        let playlists = client.spotify.current_user_playlists(50, 0);
+        let devices = client.spotify.device();
+        let (playlists, devices) = tokio::join!(playlists, devices);
 
-        let (playlists, devices) = tokio::join!(playlists_future, device_future);
         let device: Option<Device> = match devices {
             Ok(payload) => payload.devices.into_iter().next(),
             Err(_) => None,
