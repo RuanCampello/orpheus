@@ -1,4 +1,4 @@
-mod player;
+pub(super) mod player;
 pub(super) mod playlist;
 pub(super) mod search;
 
@@ -55,6 +55,7 @@ pub(in crate::tui) struct LyricState {
     pub lyrics: String,
 }
 
+#[derive(Default)]
 pub(in crate::tui) struct WindowSize {
     pub height: u16,
     pub width: u16,

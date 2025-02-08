@@ -73,7 +73,7 @@ impl Lyra {
             .flat_map(|element| element.text())
             .filter(|line| !line.trim_start().starts_with('['))
             .collect::<Vec<_>>()
-            .join("\n");
+            .join("\n\n");
 
         Ok(lyrics)
     }

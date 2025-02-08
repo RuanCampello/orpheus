@@ -1,4 +1,4 @@
-use crate::internal::image::image_url_to_ascii;
+use crate::internal::image::{colour_from_image, image_url_to_ascii, Rgb};
 use crate::tui::state::WindowSize;
 use rspotify::model::playing::Playing;
 
@@ -7,9 +7,11 @@ pub(in crate::tui) struct PlayerState {
     pub image: Option<Image>,
 }
 
+#[derive(Default)]
 pub(in crate::tui) struct Image {
     pub ascii: String,
     pub image_url: String,
+    pub colour: Rgb,
     rendered_at_size: WindowSize,
 }
 
@@ -33,7 +35,10 @@ impl PlayerState {
         }
 
         self.image = Some(Image {
-            ascii: image_url_to_ascii(url, &height, &width).await.unwrap_or_default(),
+            ascii: image_url_to_ascii(url, &height, &width)
+                .await
+                .unwrap_or_default(),
+            colour: colour_from_image(url).await.unwrap_or_default(),
             image_url: url.to_string(),
             rendered_at_size: WindowSize { height, width },
         });

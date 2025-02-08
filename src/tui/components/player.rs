@@ -1,16 +1,20 @@
 use crate::internal::text::{Size, Text};
 use crate::tui::colours::Palette;
 use crate::tui::components::{pad, time_from_ms, BlockExt};
+use crate::tui::state::player::Image;
 use crate::tui::state::{LyricState, State};
 use deunicode::deunicode;
 use ratatui::layout::{Constraint, Layout, Rect};
-use ratatui::style::{Color, Style};
+use ratatui::style::{Color, Style, Stylize};
 use ratatui::text::Line;
-use ratatui::widgets::{Block, LineGauge, Padding, Paragraph, Wrap};
+use ratatui::widgets::{Block, BorderType, Borders, LineGauge, Padding, Paragraph, Wrap};
 use ratatui::Frame;
+use std::fs::File;
 use std::ops::Div;
 
 pub fn draw_player<'a>(frame: &'a mut Frame, state: &'a mut State, area: Rect) {
+    let mut colour = File::create("colours.txt").unwrap();
+
     if let Some(playing) = &state.player.playing {
         let [image_area, remaining_area] =
             Layout::vertical([Constraint::Percentage(50), Constraint::Min(0)]).areas(area);
@@ -89,18 +93,28 @@ fn draw_progress_line<'a>(
     frame.render_widget(duration, duration_area);
 }
 
-pub fn draw_lyrics(frame: &mut Frame, lyrics: &LyricState, area: Rect) {
+pub fn draw_lyrics(
+    frame: &mut Frame,
+    lyrics: &LyricState,
+    image_state: Option<&Image>,
+    area: Rect,
+) {
     if !lyrics.active {
         return;
     }
 
+    let (r, g, b) = image_state.unwrap().colour;
+
     let paragraph = Paragraph::new(lyrics.lyrics.as_str())
+        .fg(Color::Rgb(r, g, b))
         .left_aligned()
         .wrap(Wrap { trim: false })
         .block(
             Block::new()
-                .secondary_border()
+                .borders(Borders::ALL)
+                .border_type(BorderType::Rounded)
                 .title(pad("Lyrics", 2))
+                .title_style(Style::new().bold())
                 .padding(Padding::proportional(1)),
         );
 

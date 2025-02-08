@@ -1,6 +1,9 @@
+use anyhow::Result;
 use image::imageops::FilterType;
 use image::{DynamicImage, GenericImageView, ImageReader};
 use std::io::Cursor;
+
+pub(crate) type Rgb = (u8, u8, u8);
 
 const ASCII_CHARS: &[u8] = b"#+=-|:. ";
 
@@ -8,7 +11,7 @@ pub(crate) async fn image_url_to_ascii<'a>(
     url: &'a str,
     window_height: &'a u16,
     window_width: &'a u16,
-) -> Result<String, Box<dyn std::error::Error>> {
+) -> Result<String> {
     let response = reqwest::get(url).await?;
     let image_data = response.bytes().await?;
 
@@ -24,6 +27,46 @@ pub(crate) async fn image_url_to_ascii<'a>(
     let ascii_string = image_to_ascii(&image);
 
     Ok(ascii_string)
+}
+
+pub(crate) async fn colour_from_image<'u>(url: &'u str) -> Result<Rgb> {
+    let bytes = reqwest::get(url).await?.bytes().await?;
+    let image = image::load_from_memory(&bytes)?.to_rgb8();
+
+    let mut most_vivid = (0, 0, 0);
+    let mut max_vividness = 0.0;
+
+    let calculate_vividness = |r: u8, g: u8, b: u8| -> f32 {
+        let r = r as f32 / 255.0;
+        let g = g as f32 / 255.0;
+        let b = b as f32 / 255.0;
+
+        let max_rgb = r.max(g).max(b);
+        let min_rgb = r.min(g).min(b);
+        let delta = max_rgb - min_rgb;
+
+        let saturation = if max_rgb != 0.0 { delta / max_rgb } else { 0.0 };
+        let brightness = (r + g + b) / 3.0;
+        saturation * brightness
+    };
+
+    let (width, height) = (image.width(), image.height());
+    let step = 10;
+
+    for x in (0..width).step_by(step) {
+        for y in (0..height).step_by(step) {
+            let pixel = image.get_pixel(x, y);
+            let (r, g, b) = (pixel[0], pixel[1], pixel[2]);
+
+            let vividness = calculate_vividness(r, g, b);
+            if vividness > max_vividness {
+                max_vividness = vividness;
+                most_vivid = (r, g, b);
+            }
+        }
+    }
+
+    Ok((most_vivid.0, most_vivid.1, most_vivid.2))
 }
 
 fn image_to_ascii(image: &DynamicImage) -> String {
