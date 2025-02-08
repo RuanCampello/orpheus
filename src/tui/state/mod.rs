@@ -280,7 +280,7 @@ impl State {
         let song_id = &format!("{name} {artist_name}");
 
         if let Ok(lyrics) = self.client.lyra.get_song_lyrics(song_id).await {
-            self.lyrics_state.lyrics = lyrics;
+            self.lyrics_state.update(lyrics);
         };
     }
 

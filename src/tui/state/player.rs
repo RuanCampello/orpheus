@@ -4,6 +4,7 @@ use ratatui::crossterm::event::{MouseButton, MouseEvent, MouseEventKind};
 use ratatui::layout::{Position, Rect};
 use ratatui::widgets::ScrollbarState;
 use rspotify::model::playing::Playing;
+use std::ops::{Div, Mul};
 
 pub(in crate::tui) struct PlayerState {
     pub playing: Option<Playing>,
@@ -23,6 +24,7 @@ pub(in crate::tui) struct LyricState {
     pub active: bool,
     is_dragging: bool,
     pub offset: usize,
+    pub length: usize,
     drag_start: Option<u16>,
     pub area: Rect,
     pub lyrics: String,
@@ -72,9 +74,9 @@ impl PlayerState {
 }
 
 impl LyricState {
+    /// Updates the current state of the [scrollbar](ScrollbarState)
+    /// and [lyrics](Self) based on mouse events.
     pub(super) fn handle_scroll(&mut self, mouse: &MouseEvent) {
-        let max_scroll = self.lyrics.lines().count().saturating_sub(1) as isize;
-
         match mouse.kind {
             MouseEventKind::Down(MouseButton::Left) => {
                 if self.area.contains(Position::new(mouse.column, mouse.row)) {
@@ -94,12 +96,20 @@ impl LyricState {
 
                     let delta = mouse.row as isize - start_y as isize;
 
-                    self.offset = (self.offset as isize + delta).max(0).min(max_scroll) as usize;
+                    self.offset =
+                        (self.offset as isize + delta).max(0).min(self.length as _) as usize;
                 }
             }
             _ => {}
         }
 
         self.scrollbar_state = self.scrollbar_state.position(self.offset);
+    }
+
+    /// Updates the actual value of the lyrics and it's length.
+    pub(super) fn update(&mut self, new_lyrics: String) {
+        let count = new_lyrics.lines().count();
+        self.length = count;
+        self.lyrics = new_lyrics;
     }
 }

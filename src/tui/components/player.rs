@@ -103,11 +103,11 @@ pub fn draw_lyrics(
         return;
     }
 
-    let (r, g, b) = image_state.unwrap().colour;
-
     let scrollbar = Scrollbar::new(ScrollbarOrientation::VerticalRight);
-    lyrics.scrollbar_state = lyrics.scrollbar_state.content_length(lyrics.lyrics.len());
+    lyrics.scrollbar_state = lyrics.scrollbar_state.content_length(lyrics.length);
     lyrics.area = area;
+
+    let (r, g, b) = image_state.unwrap().colour;
 
     let paragraph = Paragraph::new(lyrics.lyrics.as_str())
         .fg(Color::Rgb(r, g, b))
