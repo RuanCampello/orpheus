@@ -14,10 +14,10 @@ use ratatui::Terminal;
 use rspotify::model::device::Device;
 use rspotify::model::search::SearchResult;
 use rspotify::senum::SearchType;
-use std::io::{self, Stdout, Write};
+use std::io::{self, Stdout};
 use std::time::{Duration, Instant};
 
-/// Defines the page that should be rendered in main area.
+/// Defines the page that should be rendered in the main area.
 #[derive(PartialEq, Debug, Default)]
 pub enum Tab {
     #[default]
@@ -32,7 +32,7 @@ pub(super) enum VolumeAction {
     Decrease,
 }
 
-/// Interface that reflects and calls the client in order to generate the UI.
+/// Interface that reflects and calls the client to generate the UI.
 pub(crate) struct State {
     config: Config,
 
@@ -193,14 +193,18 @@ impl State {
         let query = self.search_state.input.as_str();
         let tracks_future = create_search_future!(self.client, query, SearchType::Track);
         let artists_future = create_search_future!(self.client, query, SearchType::Artist);
-        // let albums_future = create_search_future!(self.client, query, SearchType::Album);
+        let albums_future = create_search_future!(self.client, query, SearchType::Album);
 
         #[allow(clippy::single_match)]
-        match tokio::try_join!(tracks_future, artists_future) {
-            Ok((SearchResult::Tracks(tracks), SearchResult::Artists(artists))) => {
+        match tokio::try_join!(tracks_future, artists_future, albums_future) {
+            Ok((
+                SearchResult::Tracks(tracks),
+                SearchResult::Artists(artists),
+                SearchResult::Albums(albums),
+            )) => {
                 self.search_state.results.songs = ResultItem::new(tracks);
                 self.search_state.results.artists = ResultItem::new(artists);
-                // self.search_state.results.albums = Some(ResultItem::new(albums));
+                self.search_state.results.albums = ResultItem::new(albums);
             }
             _ => {}
         };

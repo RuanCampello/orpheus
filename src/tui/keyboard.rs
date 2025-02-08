@@ -77,6 +77,7 @@ impl State {
                 'a' => search_state.set_active(ActiveResult::Albums),
                 'd' => search_state.set_active(ActiveResult::Artists),
                 'l' => self.lyrics_state.active = !self.lyrics_state.active,
+                // sets the search state to active
                 'e' => {
                     self.playlist_state.selected_playlist.state.active = false;
                     search_state.set_active(ActiveResult::None);
@@ -154,6 +155,9 @@ impl State {
             }
             ActiveResult::Artists => {
                 Self::update_navigation(&mut self.search_state.results.artists.table_state, key)
+            }
+            ActiveResult::Albums => {
+                Self::update_navigation(&mut self.search_state.results.albums.table_state, key)
             }
             _ => {}
         }
