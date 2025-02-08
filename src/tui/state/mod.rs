@@ -5,7 +5,7 @@ pub(super) mod search;
 use crate::internal::config::Config;
 use crate::internal::Client;
 use crate::tui::draw;
-use crate::tui::state::player::PlayerState;
+use crate::tui::state::player::{LyricState, PlayerState};
 use crate::tui::state::playlist::PlaylistState;
 use crate::tui::state::search::{ResultItem, SearchState};
 use ratatui::backend::CrosstermBackend;
@@ -16,7 +16,6 @@ use rspotify::model::search::SearchResult;
 use rspotify::senum::SearchType;
 use std::io::{self, Stdout};
 use std::time::{Duration, Instant};
-use ratatui::widgets::ScrollbarState;
 
 /// Defines the page that should be rendered in the main area.
 #[derive(PartialEq, Debug, Default)]
@@ -48,13 +47,6 @@ pub(crate) struct State {
     pub(super) search_state: SearchState,
     pub(super) should_quit: bool,
     pub(super) player: PlayerState,
-}
-
-#[derive(Default)]
-pub(in crate::tui) struct LyricState {
-    pub scrollbar_state: ScrollbarState,
-    pub active: bool,
-    pub lyrics: String,
 }
 
 #[derive(Default)]
@@ -132,6 +124,7 @@ impl State {
                 match event::read()? {
                     Event::Resize(x, y) => self.handle_resize(x, y),
                     Event::Key(key) => self.handle_key(key.code).await,
+                    Event::Mouse(mouse) => self.lyrics_state.handle_scroll(&mouse),
                     _ => continue,
                 }
             }

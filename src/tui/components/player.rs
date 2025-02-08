@@ -1,8 +1,8 @@
 use crate::internal::text::{Size, Text};
 use crate::tui::colours::Palette;
 use crate::tui::components::{pad, time_from_ms, BlockExt};
-use crate::tui::state::player::Image;
-use crate::tui::state::{LyricState, State};
+use crate::tui::state::player::{Image, LyricState};
+use crate::tui::state::State;
 use deunicode::deunicode;
 use ratatui::layout::{Constraint, Layout, Rect};
 use ratatui::style::{Color, Style, Stylize};
@@ -107,6 +107,7 @@ pub fn draw_lyrics(
 
     let scrollbar = Scrollbar::new(ScrollbarOrientation::VerticalRight);
     lyrics.scrollbar_state = lyrics.scrollbar_state.content_length(lyrics.lyrics.len());
+    lyrics.area = area;
 
     let paragraph = Paragraph::new(lyrics.lyrics.as_str())
         .fg(Color::Rgb(r, g, b))
@@ -120,7 +121,7 @@ pub fn draw_lyrics(
                 .title_style(Style::new().bold())
                 .padding(Padding::proportional(1)),
         )
-        .scroll((0, 0));
+        .scroll((lyrics.offset as _, 0));
 
     frame.render_widget(paragraph, area);
     frame.render_stateful_widget(scrollbar, area, &mut lyrics.scrollbar_state);

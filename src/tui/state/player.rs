@@ -1,5 +1,8 @@
 use crate::internal::image::{colour_from_image, image_url_to_ascii, Rgb};
 use crate::tui::state::WindowSize;
+use ratatui::crossterm::event::{MouseButton, MouseEvent, MouseEventKind};
+use ratatui::layout::{Position, Rect};
+use ratatui::widgets::ScrollbarState;
 use rspotify::model::playing::Playing;
 
 pub(in crate::tui) struct PlayerState {
@@ -13,6 +16,17 @@ pub(in crate::tui) struct Image {
     pub image_url: String,
     pub colour: Rgb,
     rendered_at_size: WindowSize,
+}
+
+#[derive(Default)]
+pub(in crate::tui) struct LyricState {
+    pub active: bool,
+    is_dragging: bool,
+    pub offset: usize,
+    drag_start: Option<u16>,
+    pub area: Rect,
+    pub lyrics: String,
+    pub scrollbar_state: ScrollbarState,
 }
 
 impl PlayerState {
@@ -54,5 +68,38 @@ impl PlayerState {
         }
 
         None
+    }
+}
+
+impl LyricState {
+    pub(super) fn handle_scroll(&mut self, mouse: &MouseEvent) {
+        let max_scroll = self.lyrics.lines().count().saturating_sub(1) as isize;
+
+        match mouse.kind {
+            MouseEventKind::Down(MouseButton::Left) => {
+                if self.area.contains(Position::new(mouse.column, mouse.row)) {
+                    self.is_dragging = true;
+                    self.drag_start = Some(mouse.row);
+                }
+            }
+            MouseEventKind::Up(MouseButton::Left) => {
+                self.is_dragging = false;
+                self.drag_start = None;
+            }
+            MouseEventKind::Drag(MouseButton::Left) => {
+                if self.is_dragging {
+                    let Some(start_y) = self.drag_start else {
+                        return;
+                    };
+
+                    let delta = mouse.row as isize - start_y as isize;
+
+                    self.offset = (self.offset as isize + delta).max(0).min(max_scroll) as usize;
+                }
+            }
+            _ => {}
+        }
+
+        self.scrollbar_state = self.scrollbar_state.position(self.offset);
     }
 }
