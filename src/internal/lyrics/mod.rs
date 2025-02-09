@@ -1,9 +1,11 @@
 mod model;
 
 use crate::internal::lyrics::model::{SearchResponse, SearchResponseBody};
+use regex::Regex;
 use reqwest::header::{HeaderMap, HeaderValue, AUTHORIZATION};
 use reqwest::Client;
 use scraper::{Html, Selector};
+use std::io::Write;
 use thiserror::Error;
 
 #[derive(Debug, Error)]
@@ -67,13 +69,15 @@ impl Lyra {
 
         let html = Html::parse_document(&html);
         let selector = Selector::parse("div[data-lyrics-container='true']").unwrap();
+        let regex = Regex::new(r"(?s)\[.*?\]\n?").unwrap();
 
         let lyrics = html
             .select(&selector)
             .flat_map(|element| element.text())
-            .filter(|line| !line.trim_start().starts_with('['))
+            .map(|line| line.trim())
             .collect::<Vec<_>>()
-            .join("\n\n");
+            .join("\n");
+        let lyrics = regex.replace_all(&lyrics, "\n").trim().to_string();
 
         Ok(lyrics)
     }

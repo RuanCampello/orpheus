@@ -1846,6 +1846,7 @@ dependencies = [
  "font8x8",
  "image",
  "ratatui",
+ "regex",
  "reqwest",
  "rspotify",
  "scraper",
