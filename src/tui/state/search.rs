@@ -82,7 +82,7 @@ impl Playable for ResultItem<Page<FullTrack>> {
         {
             return Some(song.uri.to_string());
         }
-        
+
         None
     }
 }
@@ -107,6 +107,12 @@ impl Navigable for TableStateExt {
 
     fn set_active(&mut self, active: bool) {
         self.active = active;
+    }
+}
+
+impl AsRef<TableStateExt> for TableStateExt {
+    fn as_ref(&self) -> &TableStateExt {
+        self
     }
 }
 

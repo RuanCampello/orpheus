@@ -1,6 +1,7 @@
 use crate::internal::image::Rgb;
 use crate::tui::colours::Palette;
 use crate::tui::components::{pad, time_from_ms, BlockExt, ToRow};
+use crate::tui::state::search::TableStateExt;
 use crate::tui::state::State;
 use ratatui::layout::{Alignment, Constraint, Layout, Position, Rect};
 use ratatui::style::{Style, Stylize};
@@ -83,7 +84,7 @@ pub fn draw_search_results(frame: &mut Frame, state: &mut State, area: Rect) {
             &songs.items,
             "Songs",
             WIDTHS,
-            state.search_state.results.songs.table_state.active,
+            &state.search_state.results.songs.table_state,
             &state.colour,
             HEADERS,
             None,
@@ -104,7 +105,7 @@ pub fn draw_search_results(frame: &mut Frame, state: &mut State, area: Rect) {
             &albums.items,
             "Albums",
             WIDTHS,
-            state.search_state.results.albums.table_state.active,
+            &state.search_state.results.albums.table_state,
             &state.colour,
             HEADERS,
             None,
@@ -125,7 +126,7 @@ pub fn draw_search_results(frame: &mut Frame, state: &mut State, area: Rect) {
             &artists.items,
             "Artists",
             WIDTHS,
-            state.search_state.results.artists.table_state.active,
+            &state.search_state.results.artists.table_state,
             &state.colour,
             HEADERS,
             None,
@@ -143,7 +144,7 @@ pub(super) fn draw_results_table<'a, T: ToRow<'a> + 'a>(
     items: &[T],
     title: &'a str,
     widths: &[Constraint],
-    active: bool,
+    state: &TableStateExt,
     active_colour: &Rgb,
     headers: &'a [&'a str],
     offset: Option<u32>,
@@ -154,8 +155,8 @@ pub(super) fn draw_results_table<'a, T: ToRow<'a> + 'a>(
         .map(|(idx, item)| item.to_row(idx + 1 + offset.unwrap_or(0) as usize))
         .collect();
 
-    Table::new(rows, widths)
-        .row_highlight_style(match active {
+    let table = Table::new(rows, widths)
+        .row_highlight_style(match state.active {
             true => Style::new().bg(active_colour.into()).bold(),
             false => Style::new().bg(Palette::Foreground.into()).bold(),
         })
@@ -163,9 +164,11 @@ pub(super) fn draw_results_table<'a, T: ToRow<'a> + 'a>(
         .column_spacing(2)
         .block(
             Block::bordered()
-                .bordered_section(active_colour, active)
+                .bordered_section(active_colour, state.active)
                 .border_type(BorderType::Rounded)
                 .title(pad(title, 1))
                 .padding(Padding::proportional(1)),
-        )
+        );
+
+    table
 }

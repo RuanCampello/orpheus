@@ -53,7 +53,7 @@ impl Lyra {
     }
 
     pub async fn get_song_lyrics(&self, name: &str) -> Result<String, Error> {
-        let search = self.search(name).await?;
+        let search = self.search(name.split("-").next().unwrap_or(name)).await?;
         let Some(track) = search.hits.first() else {
             return Err(Error::NotFound(name.to_string()));
         };

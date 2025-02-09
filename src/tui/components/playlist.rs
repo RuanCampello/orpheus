@@ -83,7 +83,7 @@ pub fn draw_playlist_screen<'a>(
             .collect::<Vec<&PlaylistTrack>>(),
         &playlist.name,
         WIDTHS,
-        selected_playlist.state.active,
+        &selected_playlist.state,
         active_colour,
         HEADERS,
         Some(offset),
