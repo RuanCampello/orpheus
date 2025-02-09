@@ -1,7 +1,8 @@
+use crate::internal::image::Rgb;
 use crate::internal::text::{Size, Text};
 use crate::tui::colours::Palette;
 use crate::tui::components::{pad, time_from_ms, BlockExt};
-use crate::tui::state::player::{Image, LyricState};
+use crate::tui::state::player::LyricState;
 use crate::tui::state::State;
 use deunicode::deunicode;
 use ratatui::layout::{Constraint, Layout, Rect};
@@ -58,6 +59,7 @@ pub fn draw_player<'a>(frame: &'a mut Frame, state: &'a mut State, area: Rect) {
             playing.progress_ms.as_ref().unwrap(),
             &playing.item.as_ref().unwrap().duration_ms,
             playing.is_playing,
+            &state.colour,
             progress_bar,
         );
     }
@@ -68,6 +70,7 @@ fn draw_progress_line<'a>(
     progress: &'a u32,
     duration: &'a u32,
     is_playing: bool,
+    colour: &'a Rgb,
     area: Rect,
 ) {
     let time = time_from_ms(progress);
@@ -81,7 +84,7 @@ fn draw_progress_line<'a>(
 
     let gauge = LineGauge::default()
         .filled_style(Style::new().fg(match is_playing {
-            true => Palette::Secondary.into(),
+            true => colour.into(),
             false => Palette::Foreground.into(),
         }))
         .line_set(ratatui::symbols::line::THICK)
@@ -93,12 +96,7 @@ fn draw_progress_line<'a>(
     frame.render_widget(duration, duration_area);
 }
 
-pub fn draw_lyrics(
-    frame: &mut Frame,
-    lyrics: &mut LyricState,
-    image_state: Option<&Image>,
-    area: Rect,
-) {
+pub fn draw_lyrics(frame: &mut Frame, lyrics: &mut LyricState, current_colour: &Rgb, area: Rect) {
     if !lyrics.active {
         return;
     }
@@ -107,10 +105,8 @@ pub fn draw_lyrics(
     lyrics.scrollbar_state = lyrics.scrollbar_state.content_length(lyrics.length);
     lyrics.area = area;
 
-    let (r, g, b) = image_state.unwrap().colour;
-
     let paragraph = Paragraph::new(lyrics.lyrics.as_str())
-        .fg(Color::Rgb(r, g, b))
+        .fg(Color::from(current_colour))
         .left_aligned()
         .wrap(Wrap { trim: false })
         .block(

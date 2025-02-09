@@ -1,3 +1,4 @@
+use crate::internal::image::Rgb;
 use crate::tui::components::search::draw_results_table;
 use crate::tui::components::{pad, time_from_ms, BlockExt, ListExt, ToRow};
 use crate::tui::state::playlist::SelectedPlaylist;
@@ -39,7 +40,7 @@ pub fn draw_playlists_sidebar<'a>(frame: &'a mut Frame, state: &'a mut State, ar
     let playlists_block = Block::bordered()
         .border_type(BorderType::Rounded)
         .title(pad("Playlist", 2))
-        .bordered_section(state.playlist_state.active);
+        .bordered_section(&state.colour, state.playlist_state.active);
 
     let playlists: Vec<ListItem> = state
         .playlist_state
@@ -50,7 +51,7 @@ pub fn draw_playlists_sidebar<'a>(frame: &'a mut Frame, state: &'a mut State, ar
 
     let playlists = List::new(playlists)
         .block(playlists_block)
-        .highlightable_section(state.playlist_state.active);
+        .highlightable_section(&state.colour, state.playlist_state.active);
 
     frame.render_stateful_widget(playlists, area, &mut state.playlist_state.state);
 }
@@ -60,6 +61,7 @@ pub fn draw_playlist_screen<'a>(
     selected_playlist: &'a mut SelectedPlaylist,
     offset: u32,
     offset_step: u32,
+    active_colour: &'a Rgb,
     area: Rect,
 ) {
     const WIDTHS: &[Constraint] = &[
@@ -82,6 +84,7 @@ pub fn draw_playlist_screen<'a>(
         &playlist.name,
         WIDTHS,
         selected_playlist.state.active,
+        active_colour,
         HEADERS,
         Some(offset),
     );

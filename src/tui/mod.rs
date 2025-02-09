@@ -42,6 +42,7 @@ fn draw(frame: &mut Frame, state: &mut State) {
             &mut state.playlist_state.selected_playlist,
             state.playlist_state.offset,
             state.playlist_state.offset_step,
+            &state.colour,
             main_area,
         ),
         Tab::Home => {}
@@ -49,5 +50,5 @@ fn draw(frame: &mut Frame, state: &mut State) {
 
     draw_playlists_sidebar(frame, state, playlist_area);
     draw_player(frame, state, queue_area);
-    draw_lyrics(frame, &mut state.lyrics_state, state.player.image.as_ref(), lyrics_area)
+    draw_lyrics(frame, &mut state.lyrics_state, &state.colour, lyrics_area)
 }

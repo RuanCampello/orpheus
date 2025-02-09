@@ -3,6 +3,7 @@ pub(in crate::tui) mod playlist;
 pub(in crate::tui) mod search;
 pub(in crate::tui) mod volume;
 
+use crate::internal::image::Rgb;
 use crate::tui::colours::Palette;
 use ratatui::style::{Style, Stylize};
 use ratatui::widgets::{Block, BorderType, Borders, List, Row};
@@ -26,18 +27,18 @@ trait ToRow<'a> {
 }
 
 trait BlockExt {
-    fn bordered_section(self, active: bool) -> Self;
+    fn bordered_section(self, colour: &Rgb, active: bool) -> Self;
     fn secondary_border(self) -> Self;
 }
 
 trait ListExt {
-    fn highlightable_section(self, active: bool) -> Self;
+    fn highlightable_section(self, colour: &Rgb, active: bool) -> Self;
 }
 
 impl<'a> BlockExt for Block<'a> {
-    fn bordered_section(self, active: bool) -> Self {
+    fn bordered_section(self, colour: &Rgb, active: bool) -> Self {
         self.borders(Borders::ALL).border_style(match active {
-            true => Style::new().fg(Palette::Secondary.into()),
+            true => Style::new().fg(colour.into()),
             false => Style::new().fg(Palette::Foreground.into()),
         })
     }
@@ -49,9 +50,9 @@ impl<'a> BlockExt for Block<'a> {
 }
 
 impl<'a> ListExt for List<'a> {
-    fn highlightable_section(self, active: bool) -> Self {
+    fn highlightable_section(self, colour: &Rgb, active: bool) -> Self {
         self.highlight_style(match active {
-            true => Style::new().bg(Palette::Secondary.into()).bold(),
+            true => Style::new().bg(colour.into()).bold(),
             false => Style::new().bg(Palette::Foreground.into()),
         })
     }

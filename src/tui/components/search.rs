@@ -1,3 +1,4 @@
+use crate::internal::image::Rgb;
 use crate::tui::colours::Palette;
 use crate::tui::components::{pad, time_from_ms, BlockExt, ToRow};
 use crate::tui::state::State;
@@ -50,7 +51,7 @@ pub fn draw_search_input<'a>(frame: &'a mut Frame, state: &'a mut State, area: R
     let input = Block::new()
         .title(pad("What do you wanna listen?", 2))
         .title_alignment(Alignment::Center)
-        .bordered_section(state.search_state.active);
+        .bordered_section(&state.colour, state.search_state.active);
     let input = Paragraph::new(state.search_state.input.as_str()).block(input);
 
     if state.search_state.active {
@@ -83,6 +84,7 @@ pub fn draw_search_results(frame: &mut Frame, state: &mut State, area: Rect) {
             "Songs",
             WIDTHS,
             state.search_state.results.songs.table_state.active,
+            &state.colour,
             HEADERS,
             None,
         );
@@ -97,16 +99,17 @@ pub fn draw_search_results(frame: &mut Frame, state: &mut State, area: Rect) {
     if let Some(albums) = &mut state.search_state.results.albums.data {
         const WIDTHS: &[Constraint] = &[Constraint::Length(40), Constraint::Length(25)];
         const HEADERS: &[&str; 2] = &["Title", "Artist"];
-    
+
         let albums_table = draw_results_table(
             &albums.items,
             "Albums",
             WIDTHS,
             state.search_state.results.albums.table_state.active,
+            &state.colour,
             HEADERS,
             None,
         );
-    
+
         frame.render_stateful_widget(
             albums_table,
             albums_area,
@@ -123,6 +126,7 @@ pub fn draw_search_results(frame: &mut Frame, state: &mut State, area: Rect) {
             "Artists",
             WIDTHS,
             state.search_state.results.artists.table_state.active,
+            &state.colour,
             HEADERS,
             None,
         );
@@ -140,6 +144,7 @@ pub(super) fn draw_results_table<'a, T: ToRow<'a> + 'a>(
     title: &'a str,
     widths: &[Constraint],
     active: bool,
+    active_colour: &Rgb,
     headers: &'a [&'a str],
     offset: Option<u32>,
 ) -> Table<'a> {
@@ -151,14 +156,14 @@ pub(super) fn draw_results_table<'a, T: ToRow<'a> + 'a>(
 
     Table::new(rows, widths)
         .row_highlight_style(match active {
-            true => Style::new().bg(Palette::Secondary.into()).bold(),
+            true => Style::new().bg(active_colour.into()).bold(),
             false => Style::new().bg(Palette::Foreground.into()).bold(),
         })
         .header(Row::new(headers.to_vec()))
         .column_spacing(2)
         .block(
             Block::bordered()
-                .bordered_section(active)
+                .bordered_section(active_colour, active)
                 .border_type(BorderType::Rounded)
                 .title(pad(title, 1))
                 .padding(Padding::proportional(1)),

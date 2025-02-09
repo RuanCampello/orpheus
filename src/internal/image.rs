@@ -1,11 +1,13 @@
 use anyhow::Result;
 use image::imageops::FilterType;
 use image::{DynamicImage, GenericImageView, ImageReader};
+use ratatui::style::Color;
 use std::io::Cursor;
 
-pub(crate) type Rgb = (u8, u8, u8);
+pub(crate) struct Rgb(pub u8, pub u8, pub u8);
 
 const ASCII_CHARS: &[u8] = b"#+=-|:. ";
+const DEFAULT_PRIMARY: Rgb = Rgb(135, 75, 252);
 
 pub(crate) async fn image_url_to_ascii<'a>(
     url: &'a str,
@@ -66,7 +68,7 @@ pub(crate) async fn colour_from_image<'u>(url: &'u str) -> Result<Rgb> {
         }
     }
 
-    Ok((most_vivid.0, most_vivid.1, most_vivid.2))
+    Ok(Rgb(most_vivid.0, most_vivid.1, most_vivid.2))
 }
 
 fn image_to_ascii(image: &DynamicImage) -> String {
@@ -90,4 +92,22 @@ fn image_to_ascii(image: &DynamicImage) -> String {
 fn brightness_to_ascii(luma: f32) -> char {
     let idx = (luma * (ASCII_CHARS.len() as f32 - 1.0)).round() as usize;
     ASCII_CHARS[idx] as char
+}
+
+impl From<Rgb> for Color {
+    fn from(rgb: Rgb) -> Self {
+        Color::Rgb(rgb.0, rgb.1, rgb.2)
+    }
+}
+
+impl From<&Rgb> for Color {
+    fn from(rgb: &Rgb) -> Self {
+        Color::Rgb(rgb.0, rgb.1, rgb.2)
+    }
+}
+
+impl Default for Rgb {
+    fn default() -> Self {
+        DEFAULT_PRIMARY
+    }
 }

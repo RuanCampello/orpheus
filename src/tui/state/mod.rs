@@ -3,6 +3,7 @@ pub(super) mod playlist;
 pub(super) mod search;
 
 use crate::internal::config::Config;
+use crate::internal::image::{colour_from_image, Rgb};
 use crate::internal::Client;
 use crate::tui::draw;
 use crate::tui::state::player::{LyricState, PlayerState};
@@ -44,8 +45,9 @@ pub(crate) struct State {
     pub(in crate::tui) window: WindowSize,
     pub(in crate::tui) lyrics_state: LyricState,
 
-    pub(super) search_state: SearchState,
     pub(super) should_quit: bool,
+    pub(super) colour: Rgb,
+    pub(super) search_state: SearchState,
     pub(super) player: PlayerState,
 }
 
@@ -80,8 +82,9 @@ impl State {
         Self {
             client,
             config,
-            device: device.expect("Failed to get your device"),
             playlist_state,
+            colour: Rgb::default(),
+            device: device.expect("Failed to get your device"),
             tab: Tab::default(),
             lyrics_state: LyricState::default(),
             player: PlayerState::new(),
@@ -170,6 +173,8 @@ impl State {
                         .map(|image| image.url.as_ref())
                 })
                 .unwrap_or("default_image_url");
+
+            self.colour = colour_from_image(image_url).await.unwrap_or_default();
 
             self.player
                 .update_current_image(image_url, self.window.height, self.window.width)

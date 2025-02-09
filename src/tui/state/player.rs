@@ -1,10 +1,9 @@
-use crate::internal::image::{colour_from_image, image_url_to_ascii, Rgb};
+use crate::internal::image::image_url_to_ascii;
 use crate::tui::state::WindowSize;
 use ratatui::crossterm::event::{MouseButton, MouseEvent, MouseEventKind};
 use ratatui::layout::{Position, Rect};
 use ratatui::widgets::ScrollbarState;
 use rspotify::model::playing::Playing;
-use std::ops::{Div, Mul};
 
 pub(in crate::tui) struct PlayerState {
     pub playing: Option<Playing>,
@@ -15,7 +14,6 @@ pub(in crate::tui) struct PlayerState {
 pub(in crate::tui) struct Image {
     pub ascii: String,
     pub image_url: String,
-    pub colour: Rgb,
     rendered_at_size: WindowSize,
 }
 
@@ -54,7 +52,6 @@ impl PlayerState {
             ascii: image_url_to_ascii(url, &height, &width)
                 .await
                 .unwrap_or_default(),
-            colour: colour_from_image(url).await.unwrap_or_default(),
             image_url: url.to_string(),
             rendered_at_size: WindowSize { height, width },
         });
