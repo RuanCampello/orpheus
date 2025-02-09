@@ -82,6 +82,7 @@ impl Playable for ResultItem<Page<FullTrack>> {
         {
             return Some(song.uri.to_string());
         }
+        
         None
     }
 }

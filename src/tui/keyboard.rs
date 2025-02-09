@@ -14,7 +14,8 @@ impl State {
     pub(super) async fn handle_key(&mut self, key: KeyCode) {
         let on_playlist_page =
             self.tab.eq(&Tab::PlaylistPage) && self.playlist_state.selected_playlist.state.active;
-        let search_or_playlist = self.tab.eq(&Tab::SearchResults) || self.playlist_state.active;
+        let search_or_playlist = (self.tab.eq(&Tab::SearchResults) || self.playlist_state.active)
+            && !self.search_state.active;
 
         match key {
             // search/playlist items navigation
