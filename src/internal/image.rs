@@ -2,6 +2,7 @@ use anyhow::Result;
 use image::imageops::FilterType;
 use image::{DynamicImage, GenericImageView, ImageReader};
 use ratatui::style::Color;
+use std::collections::HashMap;
 use std::io::Cursor;
 
 pub(crate) struct Rgb(pub u8, pub u8, pub u8);
@@ -35,21 +36,33 @@ pub(crate) async fn colour_from_image<'u>(url: &'u str) -> Result<Rgb> {
     let bytes = reqwest::get(url).await?.bytes().await?;
     let image = image::load_from_memory(&bytes)?.to_rgb8();
 
-    let mut most_vivid = (0, 0, 0);
-    let mut max_vividness = 0.0;
+    let mut colour_count: HashMap<(u8, u8, u8), usize> = HashMap::new();
+    let mut colour_list = vec![];
 
-    let calculate_vividness = |r: u8, g: u8, b: u8| -> f32 {
+    let calculate_saturation = |r: u8, g: u8, b: u8| -> f32 {
         let r = r as f32 / 255.0;
         let g = g as f32 / 255.0;
         let b = b as f32 / 255.0;
 
         let max_rgb = r.max(g).max(b);
         let min_rgb = r.min(g).min(b);
-        let delta = max_rgb - min_rgb;
+        match max_rgb != 0.0 {
+            true => (max_rgb - min_rgb) / max_rgb,
+            false => 0.0,
+        }
+    };
 
-        let saturation = if max_rgb != 0.0 { delta / max_rgb } else { 0.0 };
-        let brightness = (r + g + b) / 3.0;
-        saturation * brightness
+    let calculate_brightness =
+        |r: u8, g: u8, b: u8| -> f32 { (r as f32 + g as f32 + b as f32) / (3.0 * 255.0) };
+
+    let is_near_black = |r: u8, g: u8, b: u8| -> bool {
+        let brightness = calculate_brightness(r, g, b);
+        brightness < 0.15
+    };
+
+    let is_near_white = |r: u8, g: u8, b: u8| -> bool {
+        let brightness = calculate_brightness(r, g, b);
+        brightness > 0.6
     };
 
     let (width, height) = (image.width(), image.height());
@@ -58,17 +71,60 @@ pub(crate) async fn colour_from_image<'u>(url: &'u str) -> Result<Rgb> {
     for x in (0..width).step_by(step) {
         for y in (0..height).step_by(step) {
             let pixel = image.get_pixel(x, y);
-            let (r, g, b) = (pixel[0], pixel[1], pixel[2]);
+            let colour = (pixel[0], pixel[1], pixel[2]);
 
-            let vividness = calculate_vividness(r, g, b);
-            if vividness > max_vividness {
-                max_vividness = vividness;
-                most_vivid = (r, g, b);
+            if is_near_black(colour.0, colour.1, colour.2)
+                || is_near_white(colour.0, colour.1, colour.2)
+            {
+                continue;
             }
+
+            *colour_count.entry(colour).or_insert(0) += 1;
         }
     }
 
-    Ok(Rgb(most_vivid.0, most_vivid.1, most_vivid.2))
+    colour_list.extend(colour_count.keys().copied());
+
+    // colour density for each colour
+    let mut density_map: HashMap<(u8, u8, u8), f32> = HashMap::new();
+
+    for &colour in &colour_list {
+        let mut total_distance = 0.0;
+        for &other_colour in &colour_list {
+            if colour != other_colour {
+                let dist = ((colour.0 as f32 - other_colour.0 as f32).powi(2)
+                    + (colour.1 as f32 - other_colour.1 as f32).powi(2)
+                    + (colour.2 as f32 - other_colour.2 as f32).powi(2))
+                .sqrt();
+                total_distance += dist;
+            }
+        }
+        density_map.insert(colour, 1.0 / (total_distance + 1.0));
+    }
+
+    // the best colour is based on (density × saturation) + (brightness × λ) - (near-white penalty)
+    let mut best_colour = (0, 0, 0);
+    let mut best_score = 0.0;
+    let brightness_weight = 0.2;
+    let near_white_penalty = 0.3;
+
+    for &colour in &colour_list {
+        let saturation = calculate_saturation(colour.0, colour.1, colour.2);
+        let brightness = calculate_brightness(colour.0, colour.1, colour.2);
+        let density = density_map[&colour];
+
+        let mut score = (density * saturation) + (brightness * brightness_weight);
+        if brightness > 0.85 {
+            score -= near_white_penalty;
+        }
+
+        if score > best_score {
+            best_score = score;
+            best_colour = colour;
+        }
+    }
+
+    Ok(Rgb(best_colour.0, best_colour.1, best_colour.2))
 }
 
 fn image_to_ascii(image: &DynamicImage) -> String {
