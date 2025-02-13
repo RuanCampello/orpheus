@@ -17,7 +17,7 @@ use rspotify::model::offset::for_position;
 use rspotify::model::search::SearchResult;
 use rspotify::model::PlayingItem;
 use rspotify::senum::SearchType;
-use std::io::{self, Stdout, Write};
+use std::io::{self, Stdout};
 use std::time::{Duration, Instant};
 
 /// Defines the page that should be rendered in the main area.
@@ -180,7 +180,6 @@ impl State {
                 .unwrap_or("default_image_url");
 
             self.colour = colour_from_image(image_url).await.unwrap_or_default();
-
             self.player
                 .update_current_image(image_url, self.window.height, self.window.width)
                 .await;
@@ -217,7 +216,12 @@ impl State {
     }
 
     /// Tries to play the currently selected track in the search results.
-    pub(super) async fn play_selected_track(&mut self, uri: Option<String>, offset: Option<usize>) {
+    pub(super) async fn play_selected_track(
+        &mut self,
+        uri: Option<String>,
+        offset: Option<usize>,
+        identifier: Option<String>,
+    ) {
         let device_id = self.config.device_id.take();
         let context_uri = self
             .player
@@ -225,8 +229,9 @@ impl State {
             .as_ref()
             .and_then(|playing| playing.context.as_ref().map(|ctx| ctx.uri.to_string()));
         let uris = Some(vec![uri.unwrap_or_default()]);
+        let is_from_new_ctx = context_uri.eq(&identifier);
 
-        let (uris, context_uri, offset) = if context_uri.is_some() {
+        let (uris, context_uri, offset) = if context_uri.is_some() && !is_from_new_ctx {
             (None, context_uri, offset)
         } else if uris.is_some() {
             (uris, None, None)

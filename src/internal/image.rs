@@ -1,11 +1,19 @@
 use anyhow::Result;
+use dashmap::DashMap;
 use image::imageops::FilterType;
-use image::{DynamicImage, GenericImageView, ImageReader};
+use image::{DynamicImage, EncodableLayout, GenericImageView, ImageReader};
+use once_cell::sync::Lazy;
 use ratatui::style::Color;
+use sha2::{Digest, Sha256};
 use std::collections::HashMap;
 use std::io::Cursor;
+use std::sync::Arc;
 
+#[derive(Clone)]
 pub(crate) struct Rgb(pub u8, pub u8, pub u8);
+
+type Cache = Lazy<Arc<DashMap<String, (Vec<u8>, Rgb)>>>;
+static CACHE: Cache = Lazy::new(|| Arc::new(DashMap::new()));
 
 const ASCII_CHARS: &[u8] = b"#+=-|:. ";
 const DEFAULT_PRIMARY: Rgb = Rgb(135, 75, 252);
@@ -34,6 +42,15 @@ pub(crate) async fn image_url_to_ascii<'a>(
 
 pub(crate) async fn colour_from_image<'u>(url: &'u str) -> Result<Rgb> {
     let bytes = reqwest::get(url).await?.bytes().await?;
+    let hash = hash_bytes(bytes.as_bytes());
+
+    if let Some(entry) = CACHE.get(url) {
+        let (cached_hash, cached_colour) = entry.value();
+        if *cached_hash == hash {
+            return Ok(cached_colour.clone());
+        }
+    }
+
     let image = image::load_from_memory(&bytes)?.to_rgb8();
 
     let mut colour_count: HashMap<(u8, u8, u8), usize> = HashMap::new();
@@ -124,7 +141,10 @@ pub(crate) async fn colour_from_image<'u>(url: &'u str) -> Result<Rgb> {
         }
     }
 
-    Ok(Rgb(best_colour.0, best_colour.1, best_colour.2))
+    let colour = Rgb(best_colour.0, best_colour.1, best_colour.2);
+    CACHE.insert(url.to_string(), (hash, colour.clone()));
+
+    Ok(colour)
 }
 
 fn image_to_ascii(image: &DynamicImage) -> String {
@@ -143,6 +163,12 @@ fn image_to_ascii(image: &DynamicImage) -> String {
     }
 
     ascii
+}
+
+fn hash_bytes(bytes: &[u8]) -> Vec<u8> {
+    let mut hasher = Sha256::new();
+    hasher.update(bytes);
+    hasher.finalize().to_vec()
 }
 
 fn brightness_to_ascii(luma: f32) -> char {
