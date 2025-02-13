@@ -6,16 +6,18 @@ use crate::internal::config::Config;
 use crate::internal::image::{colour_from_image, Rgb};
 use crate::internal::Client;
 use crate::tui::draw;
-use crate::tui::state::player::{LyricState, PlayerState};
+use crate::tui::state::player::{AsTrack, LyricState, PlayerState};
 use crate::tui::state::playlist::PlaylistState;
 use crate::tui::state::search::{ResultItem, SearchState};
 use ratatui::backend::CrosstermBackend;
 use ratatui::crossterm::event::{self, Event};
 use ratatui::Terminal;
 use rspotify::model::device::Device;
+use rspotify::model::offset::for_position;
 use rspotify::model::search::SearchResult;
+use rspotify::model::PlayingItem;
 use rspotify::senum::SearchType;
-use std::io::{self, Stdout};
+use std::io::{self, Stdout, Write};
 use std::time::{Duration, Instant};
 
 /// Defines the page that should be rendered in the main area.
@@ -162,14 +164,17 @@ impl State {
 
     /// Tries to update the currently playing state every 5 seconds.
     pub(super) async fn get_playing_state(&mut self) {
-        if let Ok(playing) = self.client.spotify.current_user_playing_track().await {
+        if let Ok(playing) = self.client.spotify.current_playback(None, None).await {
             let image_url = playing
                 .as_ref()
                 .and_then(|playing| {
                     playing
                         .item
                         .as_ref()
-                        .and_then(|item| item.album.images.first())
+                        .and_then(|item| match item {
+                            PlayingItem::Track(track) => track.album.images.first(),
+                            _ => None,
+                        })
                         .map(|image| image.url.as_ref())
                 })
                 .unwrap_or("default_image_url");
@@ -212,20 +217,29 @@ impl State {
     }
 
     /// Tries to play the currently selected track in the search results.
-    pub(super) async fn play_selected_track(&mut self, uri: Option<String>) {
-        // TODO: why does when using ctx+device_id not working?
-
+    pub(super) async fn play_selected_track(&mut self, uri: Option<String>, offset: Option<usize>) {
         let device_id = self.config.device_id.take();
+        let context_uri = self
+            .player
+            .playing
+            .as_ref()
+            .and_then(|playing| playing.context.as_ref().map(|ctx| ctx.uri.to_string()));
+        let uris = Some(vec![uri.unwrap_or_default()]);
+
+        let (uris, context_uri, offset) = if context_uri.is_some() {
+            (None, context_uri, offset)
+        } else if uris.is_some() {
+            (uris, None, None)
+        } else {
+            (None, None, None)
+        };
+
+        let offset = offset.and_then(|o| for_position(o as u32));
+
         if self
             .client
             .spotify
-            .start_playback(
-                device_id,
-                None,
-                Some(vec![uri.unwrap_or_default()]),
-                None,
-                None,
-            )
+            .start_playback(device_id, context_uri, uris, offset, None)
             .await
             .is_ok()
         {
@@ -281,7 +295,12 @@ impl State {
             return;
         };
 
-        let name = &song.item.as_ref().unwrap().name;
+        let name = &song
+            .item
+            .as_ref()
+            .and_then(|item| item.as_track())
+            .unwrap()
+            .name;
         let song_id = &format!("{name} {artist_name}");
 
         if let Ok(lyrics) = self.client.lyra.get_song_lyrics(song_id).await {

@@ -34,8 +34,8 @@ impl State {
             {
                 match key {
                     KeyCode::Enter => {
-                        let uri = self.playlist_state.as_ref().get_selected_track_uri();
-                        self.play_selected_track(uri).await;
+                        let (uri, idx) = self.playlist_state.as_ref().get_selected_track_uri();
+                        self.play_selected_track(uri, idx).await;
                     }
                     KeyCode::Left | KeyCode::Right => {
                         self.playlist_state.handle_navigation(key);
@@ -147,8 +147,10 @@ impl State {
         match self.search_state.results.active {
             ActiveResult::Songs => {
                 if key.eq(&KeyCode::Enter) {
-                    let uri = self.search_state.results.songs.get_selected_track_uri();
-                    self.play_selected_track(uri).await;
+                    let (uri, idx) = self.search_state.results.songs.get_selected_track_uri();
+                    {
+                        self.play_selected_track(uri, idx).await;
+                    }
 
                     return;
                 };

@@ -2,7 +2,7 @@ use crate::internal::image::Rgb;
 use crate::internal::text::{Size, Text};
 use crate::tui::colours::Palette;
 use crate::tui::components::{pad, time_from_ms, BlockExt};
-use crate::tui::state::player::LyricState;
+use crate::tui::state::player::{AsTrack, LyricState};
 use crate::tui::state::State;
 use deunicode::deunicode;
 use ratatui::layout::{Constraint, Layout, Rect};
@@ -33,7 +33,11 @@ pub fn draw_player<'a>(frame: &'a mut Frame, state: &'a mut State, area: Rect) {
             frame.render_widget(image, image_area);
         }
 
-        let song = playing.item.as_ref().unwrap();
+        let song = playing
+            .item
+            .as_ref()
+            .and_then(|item| item.as_track())
+            .unwrap();
         let song_name: &str = match song.name.is_ascii() {
             true => song.name.as_str(),
             false => &deunicode(&song.name),
@@ -57,7 +61,12 @@ pub fn draw_player<'a>(frame: &'a mut Frame, state: &'a mut State, area: Rect) {
         draw_progress_line(
             frame,
             playing.progress_ms.as_ref().unwrap(),
-            &playing.item.as_ref().unwrap().duration_ms,
+            &playing
+                .item
+                .as_ref()
+                .and_then(|item| item.as_track())
+                .unwrap()
+                .duration_ms,
             playing.is_playing,
             &state.colour,
             progress_bar,

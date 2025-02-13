@@ -3,10 +3,11 @@ use crate::tui::state::WindowSize;
 use ratatui::crossterm::event::{MouseButton, MouseEvent, MouseEventKind};
 use ratatui::layout::{Position, Rect};
 use ratatui::widgets::ScrollbarState;
-use rspotify::model::playing::Playing;
+use rspotify::model::context::CurrentlyPlaybackContext;
+use rspotify::model::{track, PlayingItem};
 
 pub(in crate::tui) struct PlayerState {
-    pub playing: Option<Playing>,
+    pub playing: Option<CurrentlyPlaybackContext>,
     pub image: Option<Image>,
 }
 
@@ -62,7 +63,12 @@ impl PlayerState {
             return None;
         };
 
-        if let Some(artist) = playing.item.as_ref()?.artists.first() {
+        if let Some(artist) = playing
+            .item
+            .as_ref()
+            .and_then(|item| item.as_track())
+            .and_then(|track| track.artists.first())
+        {
             return Some(artist.name.as_str());
         }
 
@@ -105,8 +111,23 @@ impl LyricState {
 
     /// Updates the actual value of the lyrics and it's length.
     pub(super) fn update(&mut self, new_lyrics: String) {
+        // TODO: correct the lines counting
         let count = new_lyrics.lines().count();
         self.length = count;
         self.lyrics = new_lyrics;
+    }
+}
+
+pub(in crate::tui) trait AsTrack {
+    fn as_track(&self) -> Option<&track::FullTrack>;
+}
+
+impl AsTrack for PlayingItem {
+    fn as_track(&self) -> Option<&track::FullTrack> {
+        if let PlayingItem::Track(ref track) = *self {
+            Some(track)
+        } else {
+            None
+        }
     }
 }

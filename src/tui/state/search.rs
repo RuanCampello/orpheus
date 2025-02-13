@@ -73,17 +73,16 @@ impl TableStateExt {
 }
 
 impl Playable for ResultItem<Page<FullTrack>> {
-    fn get_selected_track_uri(&self) -> Option<String> {
-        let page = self.data.as_ref()?;
+    fn get_selected_track_uri(&self) -> (Option<String>, Option<usize>) {
+        let page = self.data.as_ref();
+        let idx = self.table_state.state.selected().unwrap_or(0);
 
-        if let Some(song) = page
-            .items
-            .get(self.table_state.state.selected().unwrap_or(0))
-        {
-            return Some(song.uri.to_string());
-        }
-
-        None
+        page.and_then(|page| {
+            page.items
+                .get(idx)
+                .map(|song| (Some(song.uri.clone()), Some(idx)))
+        })
+        .unwrap_or((None, None))
     }
 }
 

@@ -27,22 +27,20 @@ impl AsRef<PlaylistState> for PlaylistState {
 }
 
 pub trait Playable {
-    fn get_selected_track_uri(&self) -> Option<String>;
+    fn get_selected_track_uri(&self) -> (Option<String>, Option<usize>);
 }
 
 impl Playable for &PlaylistState {
-    fn get_selected_track_uri(&self) -> Option<String> {
-        let selected_playlist = self.selected_playlist.playlist.as_ref()?;
+    fn get_selected_track_uri(&self) -> (Option<String>, Option<usize>) {
+        let selected_playlist = self.selected_playlist.playlist.as_ref();
         let idx = self.selected_playlist.state.state.selected().unwrap_or(0);
+
         let uri = selected_playlist
-            .tracks
-            .items
-            .get(idx)?
-            .track
-            .as_ref()
+            .and_then(|playlist| playlist.tracks.items.get(idx))
+            .and_then(|playlist_track| playlist_track.track.as_ref())
             .map(|track| track.uri.to_string());
 
-        uri
+        (uri, Some(idx))
     }
 }
 
