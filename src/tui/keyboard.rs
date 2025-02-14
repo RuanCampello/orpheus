@@ -34,7 +34,7 @@ impl State {
             {
                 match key {
                     KeyCode::Enter => {
-                        let (uri, idx, id) = self.playlist_state.as_ref().get_selected_track_uri();
+                        let (uri, idx, id) = self.playlist_state.as_ref().get_selected_track();
                         self.play_selected_track(uri, idx, id).await;
                     }
                     KeyCode::Left | KeyCode::Right => {
@@ -108,7 +108,7 @@ impl State {
         }
     }
 
-    /// Updates the playlist page based on offset and offset step.
+    /// Updates the playlist page based on an offset and offset step.
     async fn new_playlist_page(&mut self) {
         let Some(uri) = self.playlist_state.selected_playlist_uri() else {
             return;
@@ -147,7 +147,7 @@ impl State {
         match self.search_state.results.active {
             ActiveResult::Songs => {
                 if key.eq(&KeyCode::Enter) {
-                    let (uri, idx, id) = self.search_state.results.songs.get_selected_track_uri();
+                    let (uri, idx, id) = self.search_state.results.songs.get_selected_track();
                     {
                         self.play_selected_track(uri, idx, id).await;
                     }

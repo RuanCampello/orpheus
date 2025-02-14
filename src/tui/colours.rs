@@ -1,5 +1,5 @@
-use ratatui::style::Color;
 use crate::internal::image::Rgb;
+use ratatui::style::Color;
 
 #[allow(dead_code)]
 pub(super) enum Palette {

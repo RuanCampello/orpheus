@@ -14,10 +14,10 @@ pub struct SearchResponseBody {
 pub struct Hit {
     #[serde(rename = "type")]
     pub _type: String,
-    pub result: Result
+    pub result: Result,
 }
 
 #[derive(Debug, Deserialize)]
 pub struct Result {
-    pub url: String
+    pub url: String,
 }

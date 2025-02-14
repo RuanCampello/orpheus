@@ -73,7 +73,7 @@ impl TableStateExt {
 }
 
 impl Playable for ResultItem<Page<FullTrack>> {
-    fn get_selected_track_uri(&self) -> (Option<String>, Option<usize>, Option<String>) {
+    fn get_selected_track(&self) -> (Option<String>, Option<usize>, Option<String>) {
         let page = self.data.as_ref();
         let idx = self.table_state.state.selected().unwrap_or(0);
 

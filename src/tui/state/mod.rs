@@ -233,6 +233,8 @@ impl State {
 
         let (uris, context_uri, offset) = if context_uri.is_some() && !is_from_new_ctx {
             (None, context_uri, offset)
+        } else if identifier.is_some() {
+            (None, identifier, offset)
         } else if uris.is_some() {
             (uris, None, None)
         } else {
