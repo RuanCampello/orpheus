@@ -17,7 +17,7 @@ use rspotify::model::offset::for_position;
 use rspotify::model::search::SearchResult;
 use rspotify::model::PlayingItem;
 use rspotify::senum::SearchType;
-use std::io::{self, Stdout};
+use std::io::{self, Stdout, Write};
 use std::time::{Duration, Instant};
 
 /// Defines the page that should be rendered in the main area.
@@ -229,16 +229,21 @@ impl State {
             .as_ref()
             .and_then(|playing| playing.context.as_ref().map(|ctx| ctx.uri.to_string()));
         let uris = Some(vec![uri.unwrap_or_default()]);
-        let is_from_new_ctx = context_uri.eq(&identifier);
+        let is_from_new_ctx = context_uri.ne(&identifier);
 
         let (uris, context_uri, offset) = if context_uri.is_some() && !is_from_new_ctx {
             (None, context_uri, offset)
-        } else if identifier.is_some() {
-            (None, identifier, offset)
-        } else if uris.is_some() {
-            (uris, None, None)
+        } else if uris.is_none() {
+            let new_context = self
+                .playlist_state
+                .selected_playlist
+                .playlist
+                .as_ref()
+                .map(|playlist| playlist.uri.to_string());
+
+            (None, new_context, offset)
         } else {
-            (None, None, None)
+            (uris, None, None)
         };
 
         let offset = offset.and_then(|o| for_position(o as u32));
