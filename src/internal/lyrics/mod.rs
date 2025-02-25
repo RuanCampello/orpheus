@@ -1,10 +1,8 @@
 mod model;
 
-use crate::internal::lyrics::model::{SearchResponse, SearchResponseBody};
-use regex::Regex;
-use reqwest::header::{HeaderMap, HeaderValue, AUTHORIZATION};
+use crate::internal::lyrics::model::SearchResponse;
+use reqwest::header::{HeaderMap, HeaderValue, USER_AGENT};
 use reqwest::Client;
-use scraper::{Html, Selector};
 use thiserror::Error;
 
 #[derive(Debug, Error)]
@@ -17,7 +15,7 @@ pub enum Error {
     NotFound(String),
 }
 
-const BASE_URL: &str = "https://api.genius.com";
+const BASE_URL: &str = "https://lrclib.net";
 
 pub struct Lyra {
     client: Client,
@@ -25,12 +23,8 @@ pub struct Lyra {
 
 impl Lyra {
     pub fn new() -> Self {
-        let token = dotenv::var("GENIUS_TOKEN").expect("API was not found");
-        let token = HeaderValue::from_str(&format!("Bearer {token}"))
-            .expect("Failed to create auth header");
-
         let mut headers = HeaderMap::new();
-        headers.insert(AUTHORIZATION, token);
+        headers.insert(USER_AGENT, HeaderValue::from_str("orpheus").unwrap());
 
         let client = reqwest::ClientBuilder::default()
             .default_headers(headers)
@@ -40,44 +34,23 @@ impl Lyra {
         Self { client }
     }
 
-    async fn search(&self, name: &str) -> Result<SearchResponseBody, Error> {
+    async fn search(&self, artist: &str, name: &str) -> Result<SearchResponse, Error> {
         let res = self
             .client
-            .get(&format!("{BASE_URL}/search?q={name}"))
+            .get(&format!(
+                "{BASE_URL}/api/get?artist_name={artist}&track_name={name}"
+            ))
             .send()
-            .await?
-            .json::<SearchResponse>()
-            .await?;
+            .await?.json::<SearchResponse>().await?;
 
-        Ok(res.response)
+        Ok(res)
     }
 
-    pub async fn get_song_lyrics(&self, name: &str) -> Result<String, Error> {
-        let search = self.search(name.split("-").next().unwrap_or(name)).await?;
-        let Some(track) = search.hits.first() else {
-            return Err(Error::NotFound(name.to_string()));
-        };
-
-        let html = self
-            .client
-            .get(&track.result.url)
-            .send()
-            .await?
-            .text()
+    pub async fn get_song_lyrics(&self, artist: &str, name: &str) -> Result<String, Error> {
+        let search = self
+            .search(artist, name.split("-").next().unwrap_or(name))
             .await?;
 
-        let html = Html::parse_document(&html);
-        let selector = Selector::parse("div[data-lyrics-container='true']").unwrap();
-        let regex = Regex::new(r"(?s)\[.*?\]\n?").unwrap();
-
-        let lyrics = html
-            .select(&selector)
-            .flat_map(|element| element.text())
-            .map(|line| line.trim())
-            .collect::<Vec<_>>()
-            .join("\n");
-        let lyrics = regex.replace_all(&lyrics, "\n").trim().to_string();
-
-        Ok(lyrics)
+        Ok(search.synced_lyrics.unwrap_or(search.plain_lyrics))
     }
 }

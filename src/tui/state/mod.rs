@@ -313,9 +313,8 @@ impl State {
             .and_then(|item| item.as_track())
             .unwrap()
             .name;
-        let song_id = &format!("{name} {artist_name}");
 
-        if let Ok(lyrics) = self.client.lyra.get_song_lyrics(song_id).await {
+        if let Ok(lyrics) = self.client.lyra.get_song_lyrics(artist_name, name).await {
             self.lyrics_state.update(lyrics);
         };
     }
