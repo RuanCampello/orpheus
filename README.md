@@ -20,15 +20,10 @@ To run this project locally, set up a `.env` file in the root directory with the
 
 [Get Spotify API Credentials](https://developer.spotify.com/documentation/web-api/)
 
-[Get Genius API Key](https://docs.genius.com)
-
 ```env
 # Spotify API credentials
 CLIENT_ID=
 CLIENT_SECRET=
-
-# Genius API token
-GENIUS_TOKEN=
 
 RSPOTIFY_REDIRECT_URI=http://localhost:8888/callback
 ```
