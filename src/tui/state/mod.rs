@@ -151,14 +151,22 @@ impl State {
 
     /// Fetch a given playlist uri and updates the respective states.
     pub(super) async fn select_playlist(&mut self, uri: String) {
+        // ignore if the user re-select the current selected playlist
+        if let Some(playlist) = self.playlist_state.selected_playlist.playlist.as_ref() {
+            if playlist.uri == uri {
+                self.playlist_page_selected();
+
+                return;
+            }
+        }
+
         let Ok(playlist) = self.client.spotify.playlist(&uri, None, None).await else {
             return;
         };
 
-        self.tab = Tab::PlaylistPage;
-        self.playlist_state.active = false;
+        self.playlist_page_selected();
+        self.playlist_state.offset = 0;
         self.playlist_state.selected_playlist.state.max_size = playlist.tracks.items.len();
-        self.playlist_state.selected_playlist.state.active = true;
         self.playlist_state.selected_playlist.playlist = Some(playlist);
     }
 
@@ -317,6 +325,13 @@ impl State {
         if let Ok(lyrics) = self.client.lyra.get_song_lyrics(artist_name, name).await {
             self.lyrics_state.update(lyrics);
         };
+    }
+    
+    /// Changes the necessary states to reflect a playlist being selected.
+    fn playlist_page_selected(&mut self) {
+        self.tab = Tab::PlaylistPage;
+        self.playlist_state.selected_playlist.state.active = true;
+        self.playlist_state.active = false;
     }
 
     fn handle_resize(&mut self, x: u16, y: u16) {

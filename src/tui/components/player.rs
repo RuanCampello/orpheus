@@ -6,12 +6,10 @@ use crate::tui::state::player::{AsTrack, LyricState};
 use crate::tui::state::State;
 use deunicode::deunicode;
 use ratatui::layout::{Constraint, Layout, Rect};
-use ratatui::style::{Color, Style, Stylize};
+use ratatui::prelude::{Span, Stylize};
+use ratatui::style::{Color, Style};
 use ratatui::text::Line;
-use ratatui::widgets::{
-    Block, BorderType, Borders, LineGauge, Padding, Paragraph, Scrollbar, ScrollbarOrientation,
-    Wrap,
-};
+use ratatui::widgets::{Block, BorderType, Borders, LineGauge, Padding, Paragraph, Wrap};
 use ratatui::Frame;
 use std::ops::Div;
 
@@ -105,17 +103,32 @@ fn draw_progress_line<'a>(
     frame.render_widget(duration, duration_area);
 }
 
-pub fn draw_lyrics(frame: &mut Frame, lyrics: &mut LyricState, current_colour: &Rgb, area: Rect) {
-    if !lyrics.active {
-        return;
-    }
+pub fn draw_lyrics(
+    frame: &mut Frame,
+    state: &mut LyricState,
+    colour: &Rgb,
+    progress: u32,
+    area: Rect,
+) {
+    let styled_text: Vec<Line> = state
+        .ordered_timestamps
+        .iter()
+        .filter_map(|ts| {
+            state.timed_lyrics.get(ts).map(|text| {
+                let color: Color = match *ts <= state.current_time {
+                    true => colour.into(),
+                    false => match ts == &state.next_timestamp() {
+                        false => Color::Gray,
+                        true => Color::White,
+                    },
+                };
+                Line::from(Span::styled(text.as_str(), Style::default().fg(color)))
+            })
+        })
+        .collect();
 
-    let scrollbar = Scrollbar::new(ScrollbarOrientation::VerticalRight);
-    lyrics.scrollbar_state = lyrics.scrollbar_state.content_length(lyrics.length);
-    lyrics.area = area;
-
-    let paragraph = Paragraph::new(lyrics.lyrics.as_str())
-        .fg(Color::from(current_colour))
+    let paragraph = Paragraph::new(styled_text)
+        .fg(Color::from(colour))
         .left_aligned()
         .wrap(Wrap { trim: false })
         .block(
@@ -126,8 +139,9 @@ pub fn draw_lyrics(frame: &mut Frame, lyrics: &mut LyricState, current_colour: &
                 .title_style(Style::new().bold())
                 .padding(Padding::proportional(1)),
         )
-        .scroll((lyrics.offset as _, 0));
+        .scroll((state.offset as u16, 0));
 
     frame.render_widget(paragraph, area);
-    frame.render_stateful_widget(scrollbar, area, &mut lyrics.scrollbar_state);
+    state.update_time(&progress);
+    state.area = area;
 }

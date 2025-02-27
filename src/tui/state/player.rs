@@ -3,8 +3,10 @@ use crate::tui::state::WindowSize;
 use ratatui::crossterm::event::{MouseButton, MouseEvent, MouseEventKind};
 use ratatui::layout::{Position, Rect};
 use ratatui::widgets::ScrollbarState;
+use regex::Regex;
 use rspotify::model::context::CurrentlyPlaybackContext;
 use rspotify::model::{track, PlayingItem};
+use std::collections::HashMap;
 
 pub(in crate::tui) struct PlayerState {
     pub playing: Option<CurrentlyPlaybackContext>,
@@ -28,6 +30,10 @@ pub(in crate::tui) struct LyricState {
     pub area: Rect,
     pub lyrics: String,
     pub scrollbar_state: ScrollbarState,
+
+    pub timed_lyrics: HashMap<u32, String>,
+    pub(crate) ordered_timestamps: Vec<u32>,
+    pub(crate) current_time: u32,
 }
 
 impl PlayerState {
@@ -109,12 +115,47 @@ impl LyricState {
         self.scrollbar_state = self.scrollbar_state.position(self.offset);
     }
 
+
     /// Updates the actual value of the lyrics and it's length.
     pub(super) fn update(&mut self, new_lyrics: String) {
         // TODO: correct the lines counting
         let count = new_lyrics.lines().count();
         self.length = count;
         self.lyrics = new_lyrics;
+        self.parse_lyrics();
+    }
+
+    fn parse_lyrics(&mut self) {
+        let re = Regex::new(r"\[(\d+):(\d+\.\d+)\](.*)").unwrap();
+        self.timed_lyrics.clear();
+        self.ordered_timestamps.clear();
+
+        for line in self.lyrics.lines() {
+            if let Some(caps) = re.captures(line) {
+                let minutes = caps[1].parse::<u32>().unwrap();
+                let seconds = caps[2].parse::<f64>().unwrap();
+                let timestamp = (minutes * 60 * 1000) + (seconds * 1000.0) as u32;
+                let text = caps[3].trim().to_string();
+
+                self.timed_lyrics.insert(timestamp, text.clone());
+                self.ordered_timestamps.push(timestamp);
+            }
+        }
+
+        self.ordered_timestamps.sort_unstable();
+        self.length = self.ordered_timestamps.len();
+    }
+
+    pub fn update_time(&mut self, current_time: &u32) {
+        self.current_time = *current_time;
+    }
+
+    pub fn next_timestamp(&self) -> u32 {
+        self.ordered_timestamps
+            .iter()
+            .find(|&&ts| ts > self.current_time)
+            .copied()
+            .unwrap_or(u32::MAX)
     }
 }
 
