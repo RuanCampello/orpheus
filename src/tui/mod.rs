@@ -54,7 +54,7 @@ fn draw(frame: &mut Frame, state: &mut State) {
         draw_lyrics(
             frame,
             &mut state.lyrics_state,
-            &state.colour,
+            state.colour,
             ctx.progress_ms.unwrap_or_default(),
             lyrics_area,
         )

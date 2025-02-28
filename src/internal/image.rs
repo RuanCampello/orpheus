@@ -9,7 +9,7 @@ use std::collections::HashMap;
 use std::io::Cursor;
 use std::sync::Arc;
 
-#[derive(Clone)]
+#[derive(Clone, Copy)]
 pub(crate) struct Rgb(pub u8, pub u8, pub u8);
 
 type Cache = Lazy<Arc<DashMap<String, (Vec<u8>, Rgb)>>>;

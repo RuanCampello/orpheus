@@ -11,7 +11,11 @@ use ratatui::style::{Color, Style};
 use ratatui::text::{Line, Span};
 use ratatui::widgets::{Block, BorderType, Borders, LineGauge, Padding, Paragraph, Wrap};
 use ratatui::Frame;
+use std::borrow::Cow;
+use std::collections::HashMap;
 use std::ops::Div;
+use std::sync::mpsc;
+use std::thread;
 
 pub fn draw_player<'a>(frame: &'a mut Frame, state: &'a mut State, area: Rect) {
     if let Some(playing) = &state.player.playing {
@@ -103,24 +107,22 @@ fn draw_progress_line<'a>(
     frame.render_widget(duration, duration_area);
 }
 
-pub fn draw_lyrics(
-    frame: &mut Frame,
-    state: &mut LyricState,
+fn calculate_styled_text(
+    ordered_timestamps: Vec<u32>,
+    timed_lyrics: HashMap<u32, String>,
+    current_time: u32,
     colour: &Rgb,
-    progress: u32,
-    area: Rect,
-) {
-    let styled_text: Vec<Line> = state
-        .ordered_timestamps
+) -> Vec<Line<'static>> {
+    ordered_timestamps
         .iter()
         .enumerate()
         .filter_map(|(i, ts)| {
-            state.timed_lyrics.get(ts).map(|text| {
-                let next_ts = state.ordered_timestamps.get(i + 1);
-                let color: Color = match *ts <= state.current_time {
+            timed_lyrics.get(&ts).map(|text| {
+                let next_ts = ordered_timestamps.get(i + 1);
+                let color: Color = match ts <= &current_time {
                     true => {
                         if let Some(next_ts) = next_ts {
-                            match state.current_time < *next_ts {
+                            match current_time < *next_ts {
                                 true => colour.into(),
                                 false => Color::White,
                             }
@@ -130,12 +132,33 @@ pub fn draw_lyrics(
                     }
                     false => Color::Gray,
                 };
-                Line::from(Span::styled(text.as_str(), Style::default().fg(color)))
+                let text: Cow<'static, str> = Cow::Owned(text.clone());
+                Line::from(Span::styled(text, Style::default().fg(color)))
             })
         })
-        .collect();
+        .collect()
+}
 
-    let paragraph = Paragraph::new(styled_text)
+pub fn draw_lyrics(
+    frame: &mut Frame,
+    state: &mut LyricState,
+    colour: Rgb,
+    progress: u32,
+    area: Rect,
+) {
+    let (sender, receiver) = mpsc::channel();
+
+    let ordered_timestamps = state.ordered_timestamps.clone();
+    let timed_lyrics = state.timed_lyrics.clone();
+
+    thread::spawn(move || {
+        let styled = calculate_styled_text(ordered_timestamps, timed_lyrics, progress, &colour);
+        sender.send(styled).unwrap()
+    });
+
+    let styled = receiver.recv().unwrap();
+
+    let paragraph = Paragraph::new(styled)
         .fg(Color::from(colour))
         .left_aligned()
         .wrap(Wrap { trim: false })
