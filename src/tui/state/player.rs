@@ -2,6 +2,7 @@ use crate::internal::image::image_url_to_ascii;
 use crate::tui::state::WindowSize;
 use ratatui::crossterm::event::{MouseButton, MouseEvent, MouseEventKind};
 use ratatui::layout::{Position, Rect};
+use ratatui::text::Line;
 use ratatui::widgets::ScrollbarState;
 use regex::Regex;
 use rspotify::model::context::CurrentlyPlaybackContext;
@@ -34,6 +35,8 @@ pub(in crate::tui) struct LyricState {
     pub timed_lyrics: HashMap<u32, String>,
     pub(crate) ordered_timestamps: Vec<u32>,
     pub(crate) current_time: u32,
+
+    pub cached_lines: Vec<Line<'static>>,
 }
 
 impl PlayerState {
@@ -115,7 +118,6 @@ impl LyricState {
         self.scrollbar_state = self.scrollbar_state.position(self.offset);
     }
 
-
     /// Updates the actual value of the lyrics and it's length.
     pub(super) fn update(&mut self, new_lyrics: String) {
         // TODO: correct the lines counting
@@ -153,7 +155,7 @@ impl LyricState {
     pub fn next_timestamp(&self) -> u32 {
         self.ordered_timestamps
             .iter()
-            .find(|&&ts| ts > self.current_time)
+            .find(|&&ts| ts > self.current_time.saturating_sub(200))
             .copied()
             .unwrap_or(u32::MAX)
     }

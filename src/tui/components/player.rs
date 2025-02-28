@@ -1,14 +1,14 @@
 use crate::internal::image::Rgb;
-use crate::internal::text::{Size, Text};
+use crate::internal::text::{Size, Text as BigText};
 use crate::tui::colours::Palette;
 use crate::tui::components::{pad, time_from_ms, BlockExt};
 use crate::tui::state::player::{AsTrack, LyricState};
 use crate::tui::state::State;
 use deunicode::deunicode;
 use ratatui::layout::{Constraint, Layout, Rect};
-use ratatui::prelude::{Span, Stylize};
+use ratatui::prelude::Stylize;
 use ratatui::style::{Color, Style};
-use ratatui::text::Line;
+use ratatui::text::{Line, Span};
 use ratatui::widgets::{Block, BorderType, Borders, LineGauge, Padding, Paragraph, Wrap};
 use ratatui::Frame;
 use std::ops::Div;
@@ -45,7 +45,7 @@ pub fn draw_player<'a>(frame: &'a mut Frame, state: &'a mut State, area: Rect) {
         let padding = padding.div(1.5).round().min(5.0) as usize;
 
         let title = &[&Line::from(pad(song_name, padding))];
-        let title = Text::new().size(&Size::Quarter).lines(title);
+        let title = BigText::new().size(&Size::Quarter).lines(title);
         frame.render_widget(title, title_area);
 
         let artist = state.player.get_artist_name().unwrap_or("Unknown");
@@ -113,14 +113,22 @@ pub fn draw_lyrics(
     let styled_text: Vec<Line> = state
         .ordered_timestamps
         .iter()
-        .filter_map(|ts| {
+        .enumerate()
+        .filter_map(|(i, ts)| {
             state.timed_lyrics.get(ts).map(|text| {
+                let next_ts = state.ordered_timestamps.get(i + 1);
                 let color: Color = match *ts <= state.current_time {
-                    true => colour.into(),
-                    false => match ts == &state.next_timestamp() {
-                        false => Color::Gray,
-                        true => Color::White,
-                    },
+                    true => {
+                        if let Some(next_ts) = next_ts {
+                            match state.current_time < *next_ts {
+                                true => colour.into(),
+                                false => Color::White,
+                            }
+                        } else {
+                            colour.into()
+                        }
+                    }
+                    false => Color::Gray,
                 };
                 Line::from(Span::styled(text.as_str(), Style::default().fg(color)))
             })
