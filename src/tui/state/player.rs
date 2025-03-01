@@ -2,7 +2,6 @@ use crate::internal::image::image_url_to_ascii;
 use crate::tui::state::WindowSize;
 use ratatui::crossterm::event::{MouseButton, MouseEvent, MouseEventKind};
 use ratatui::layout::{Position, Rect};
-use ratatui::text::Line;
 use ratatui::widgets::ScrollbarState;
 use regex::Regex;
 use rspotify::model::context::CurrentlyPlaybackContext;
@@ -23,11 +22,11 @@ pub(in crate::tui) struct Image {
 
 #[derive(Default)]
 pub(in crate::tui) struct LyricState {
-    pub active: bool,
     is_dragging: bool,
+    drag_start: Option<u16>,
+    pub active: bool,
     pub offset: usize,
     pub length: usize,
-    drag_start: Option<u16>,
     pub area: Rect,
     pub lyrics: String,
     pub scrollbar_state: ScrollbarState,
@@ -35,8 +34,6 @@ pub(in crate::tui) struct LyricState {
     pub timed_lyrics: HashMap<u32, String>,
     pub(crate) ordered_timestamps: Vec<u32>,
     pub(crate) current_time: u32,
-
-    pub cached_lines: Vec<Line<'static>>,
 }
 
 impl PlayerState {
