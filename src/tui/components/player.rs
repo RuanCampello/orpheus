@@ -5,9 +5,10 @@ use crate::tui::components::{pad, time_from_ms, BlockExt};
 use crate::tui::state::player::{AsTrack, LyricState};
 use crate::tui::state::State;
 use deunicode::deunicode;
-use ratatui::layout::{Constraint, Layout, Rect};
+use ratatui::layout::{Constraint, Layout, Margin, Rect};
 use ratatui::prelude::Stylize;
 use ratatui::style::{Color, Style};
+use ratatui::symbols::scrollbar;
 use ratatui::text::{Line, Span};
 use ratatui::widgets::{
     Block, BorderType, Borders, LineGauge, Padding, Paragraph, Scrollbar, ScrollbarOrientation,
@@ -177,9 +178,20 @@ pub fn draw_lyrics(
         )
         .scroll((state.offset as u16, 0));
 
-    let scrollbar = Scrollbar::new(ScrollbarOrientation::VerticalRight).track_symbol(Some("│"));
+    let scrollbar = Scrollbar::new(ScrollbarOrientation::VerticalRight)
+        .symbols(scrollbar::VERTICAL)
+        .track_symbol(Some("│"))
+        .begin_symbol(None)
+        .end_symbol(None);
 
     frame.render_widget(paragraph, area);
-    frame.render_stateful_widget(scrollbar, area, &mut state.scrollbar_state);
+    frame.render_stateful_widget(
+        scrollbar,
+        area.inner(Margin {
+            vertical: 1,
+            horizontal: 0,
+        }),
+        &mut state.scrollbar_state,
+    );
     state.update_time(&progress);
 }
