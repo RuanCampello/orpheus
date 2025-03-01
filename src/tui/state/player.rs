@@ -151,14 +151,6 @@ impl LyricState {
     pub fn update_time(&mut self, current_time: &u32) {
         self.current_time = *current_time;
     }
-
-    pub fn next_timestamp(&self) -> u32 {
-        self.ordered_timestamps
-            .iter()
-            .find(|&&ts| ts > self.current_time.saturating_sub(200))
-            .copied()
-            .unwrap_or(u32::MAX)
-    }
 }
 
 pub(in crate::tui) trait AsTrack {

@@ -51,12 +51,14 @@ fn draw(frame: &mut Frame, state: &mut State) {
     draw_playlists_sidebar(frame, state, playlist_area);
     draw_player(frame, state, queue_area);
     if let Some(ctx) = &state.player.playing.as_ref() {
-        draw_lyrics(
-            frame,
-            &mut state.lyrics_state,
-            state.colour,
-            ctx.progress_ms.unwrap_or_default(),
-            lyrics_area,
-        )
+        if state.lyrics_state.active {
+            draw_lyrics(
+                frame,
+                &mut state.lyrics_state,
+                state.colour,
+                ctx.progress_ms.unwrap_or_default(),
+                lyrics_area,
+            )
+        }
     }
 }

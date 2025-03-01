@@ -9,7 +9,10 @@ use ratatui::layout::{Constraint, Layout, Rect};
 use ratatui::prelude::Stylize;
 use ratatui::style::{Color, Style};
 use ratatui::text::{Line, Span};
-use ratatui::widgets::{Block, BorderType, Borders, LineGauge, Padding, Paragraph, Wrap};
+use ratatui::widgets::{
+    Block, BorderType, Borders, LineGauge, Padding, Paragraph, Scrollbar, ScrollbarOrientation,
+    Wrap,
+};
 use ratatui::Frame;
 use std::borrow::Cow;
 use std::collections::HashMap;
@@ -117,7 +120,7 @@ fn calculate_styled_text(
         .iter()
         .enumerate()
         .filter_map(|(i, ts)| {
-            timed_lyrics.get(&ts).map(|text| {
+            timed_lyrics.get(ts).map(|text| {
                 let next_ts = ordered_timestamps.get(i + 1);
                 let color: Color = match ts <= &current_time {
                     true => {
@@ -157,6 +160,8 @@ pub fn draw_lyrics(
     });
 
     let styled = receiver.recv().unwrap();
+    state.scrollbar_state = state.scrollbar_state.content_length(styled.len());
+    state.area = area;
 
     let paragraph = Paragraph::new(styled)
         .fg(Color::from(colour))
@@ -172,7 +177,9 @@ pub fn draw_lyrics(
         )
         .scroll((state.offset as u16, 0));
 
+    let scrollbar = Scrollbar::new(ScrollbarOrientation::VerticalRight).track_symbol(Some("│"));
+
     frame.render_widget(paragraph, area);
+    frame.render_stateful_widget(scrollbar, area, &mut state.scrollbar_state);
     state.update_time(&progress);
-    state.area = area;
 }

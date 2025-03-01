@@ -7,8 +7,9 @@ use crate::internal::lyrics::Lyra;
 use rspotify::client::Spotify;
 use rspotify::oauth2::{SpotifyClientCredentials, SpotifyOAuth, TokenInfo};
 use rspotify::util::{process_token, request_token};
-use std::io;
-use std::io::Read;
+use std::fmt::Debug;
+use std::fs::File;
+use std::io::{self, Read, Write};
 use std::net::{TcpListener, TcpStream};
 use std::time::{Duration, SystemTime};
 
@@ -26,6 +27,11 @@ impl Client {
             lyra: Lyra::new(),
         }
     }
+}
+
+pub fn debug<I: Debug>(filename: &str, item: I) {
+    let mut file = File::create(filename).unwrap();
+    file.write_all(format!("{item:#?}").as_bytes()).unwrap();
 }
 
 pub async fn get_token(spotify_oauth: &mut SpotifyOAuth, port: u16) -> Option<TokenInfo> {
