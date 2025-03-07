@@ -1,3 +1,4 @@
+use crate::internal::debug;
 use crate::tui::components::player::{draw_lyrics, draw_player};
 use crate::tui::components::playlist::{draw_playlist_screen, draw_playlists_sidebar};
 use crate::tui::components::search::{draw_search_input, draw_search_results};
@@ -17,10 +18,13 @@ fn draw(frame: &mut Frame, state: &mut State) {
     let [search_area, volume_area] =
         Layout::horizontal([Constraint::Min(0), Constraint::Length(23)]).areas(header_area);
 
-    let [playlist_area, main_area, queue_area] = Layout::horizontal([
+    let [playlist_area, main_area, player_area] = Layout::horizontal([
         Constraint::Percentage(20),
         Constraint::Min(0),
-        Constraint::Percentage(25),
+        match state.player.playing {
+            Some(_) => Constraint::Percentage(25),
+            None => Constraint::Length(0),
+        },
     ])
     .areas(remaining_area);
 
@@ -49,7 +53,7 @@ fn draw(frame: &mut Frame, state: &mut State) {
     }
 
     draw_playlists_sidebar(frame, state, playlist_area);
-    draw_player(frame, state, queue_area);
+    draw_player(frame, state, player_area);
     if let Some(ctx) = &state.player.playing.as_ref() {
         if state.lyrics_state.active {
             draw_lyrics(
