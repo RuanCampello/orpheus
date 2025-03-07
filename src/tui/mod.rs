@@ -1,4 +1,3 @@
-use crate::internal::debug;
 use crate::tui::components::player::{draw_lyrics, draw_player};
 use crate::tui::components::playlist::{draw_playlist_screen, draw_playlists_sidebar};
 use crate::tui::components::search::{draw_search_input, draw_search_results};

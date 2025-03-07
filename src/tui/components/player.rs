@@ -114,12 +114,19 @@ fn draw_progress_line<'a>(
 }
 
 fn calculate_styled_text(
-    ordered_timestamps: Vec<u32>,
-    timed_lyrics: HashMap<u32, String>,
+    ordered_timestamps: &Option<Vec<u32>>,
+    timed_lyrics: &Option<HashMap<u32, String>>,
     current_time: u32,
     colour: &Rgb,
-) -> Vec<Line<'static>> {
-    ordered_timestamps
+) -> Option<Vec<Line<'static>>> {
+    let Some(ordered_timestamps) = ordered_timestamps else {
+        return None;
+    };
+    let Some(timed_lyrics) = timed_lyrics else {
+        return None;
+    };
+
+    let styled_text = ordered_timestamps
         .iter()
         .enumerate()
         .filter_map(|(i, ts)| {
@@ -142,7 +149,9 @@ fn calculate_styled_text(
                 Line::from(Span::styled(text, Style::default().fg(color)))
             })
         })
-        .collect()
+        .collect();
+
+    Some(styled_text)
 }
 
 pub fn draw_lyrics(
@@ -154,19 +163,29 @@ pub fn draw_lyrics(
 ) {
     let (sender, receiver) = mpsc::channel();
 
-    let ordered_timestamps = state.ordered_timestamps.clone();
-    let timed_lyrics = state.timed_lyrics.clone();
-
-    thread::spawn(move || {
-        let styled = calculate_styled_text(ordered_timestamps, timed_lyrics, progress, &colour);
-        sender.send(styled).unwrap()
+    let ordered_timestamps = &state.ordered_timestamps;
+    let timed_lyrics = &state.timed_lyrics;
+    thread::scope(|s| {
+        s.spawn(move || {
+            if let Some(styled) = calculate_styled_text(
+                ordered_timestamps,
+                timed_lyrics,
+                progress,
+                &colour,
+            ) {
+                sender.send(styled).unwrap();
+            }
+        });
     });
 
-    let styled = receiver.recv().unwrap();
-    state.scrollbar_state = state.scrollbar_state.content_length(styled.len());
+    let Ok(styled_lyrics) = receiver.recv() else {
+        return;
+    };
+    
+    state.scrollbar_state = state.scrollbar_state.content_length(styled_lyrics.len());
     state.area = area;
 
-    let paragraph = Paragraph::new(styled)
+    let paragraph = Paragraph::new(styled_lyrics)
         .fg(Color::from(colour))
         .left_aligned()
         .wrap(Wrap { trim: false })

@@ -31,8 +31,8 @@ pub(in crate::tui) struct LyricState {
     pub lyrics: String,
     pub scrollbar_state: ScrollbarState,
 
-    pub timed_lyrics: HashMap<u32, String>,
-    pub(crate) ordered_timestamps: Vec<u32>,
+    pub timed_lyrics: Option<HashMap<u32, String>>,
+    pub(crate) ordered_timestamps: Option<Vec<u32>>,
     pub(crate) current_time: u32,
 }
 
@@ -125,9 +125,16 @@ impl LyricState {
     }
 
     fn parse_lyrics(&mut self) {
+        let Some(timed_lyrics) = self.timed_lyrics.as_mut() else {
+            return;
+        };
+        let Some(ordered_timestamps) = self.ordered_timestamps.as_mut() else {
+            return;
+        };
+
         let re = Regex::new(r"\[(\d+):(\d+\.\d+)\](.*)").unwrap();
-        self.timed_lyrics.clear();
-        self.ordered_timestamps.clear();
+        timed_lyrics.clear();
+        ordered_timestamps.clear();
 
         for line in self.lyrics.lines() {
             if let Some(caps) = re.captures(line) {
@@ -136,13 +143,13 @@ impl LyricState {
                 let timestamp = (minutes * 60 * 1000) + (seconds * 1000.0) as u32;
                 let text = caps[3].trim().to_string();
 
-                self.timed_lyrics.insert(timestamp, text.clone());
-                self.ordered_timestamps.push(timestamp);
+                timed_lyrics.insert(timestamp, text.clone());
+                ordered_timestamps.push(timestamp);
             }
         }
 
-        self.ordered_timestamps.sort_unstable();
-        self.length = self.ordered_timestamps.len();
+        ordered_timestamps.sort_unstable();
+        self.length = ordered_timestamps.len();
     }
 
     pub fn update_time(&mut self, current_time: &u32) {
