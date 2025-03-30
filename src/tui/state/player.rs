@@ -140,10 +140,15 @@ impl LyricState {
         self.scrollbar_state = self.scrollbar_state.position(self.offset);
     }
 
-    /// Updates the actual value of the lyrics and parse it.
-    pub(super) fn update(&mut self, new_lyrics: String) {
+    /// Updates the actual value of the lyrics and parse it if needed.
+    pub(super) fn update(&mut self, new_lyrics: String, is_synced: bool) {
         self.lyrics = new_lyrics;
-        self.parse_lyrics();
+
+        if is_synced {
+            self.parse_lyrics();
+        } else {
+            self.length = self.lyrics.lines().count();
+        }
     }
 
     fn parse_lyrics(&mut self) {

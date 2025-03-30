@@ -21,6 +21,8 @@ pub struct Lyra {
     client: Client,
 }
 
+type Lyrics = (String, bool);
+
 impl Lyra {
     pub fn new() -> Self {
         let mut headers = HeaderMap::new();
@@ -41,16 +43,24 @@ impl Lyra {
                 "{BASE_URL}/api/get?artist_name={artist}&track_name={name}"
             ))
             .send()
-            .await?.json::<SearchResponse>().await?;
+            .await?
+            .json::<SearchResponse>()
+            .await?;
 
         Ok(res)
     }
 
-    pub async fn get_song_lyrics(&self, artist: &str, name: &str) -> Result<String, Error> {
+    pub async fn get_song_lyrics(&self, artist: &str, name: &str) -> Result<Lyrics, Error> {
         let search = self
             .search(artist, name.split("-").next().unwrap_or(name))
             .await?;
 
-        Ok(search.synced_lyrics.unwrap_or(search.plain_lyrics))
+        let is_synced = search.synced_lyrics.is_some();
+
+        Ok(match is_synced {
+            true => (search.synced_lyrics.unwrap(), is_synced),
+            false => (search.plain_lyrics, is_synced)
+        })
     }
 }
+

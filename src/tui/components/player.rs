@@ -1,4 +1,3 @@
-use crate::internal::debug;
 use crate::internal::image::Rgb;
 use crate::internal::text::{Size, Text as BigText};
 use crate::tui::colours::Palette;
@@ -133,7 +132,7 @@ fn calculate_styled_text(
         .filter_map(|(i, ts)| {
             timed_lyrics.get(ts).map(|text| {
                 let next_ts = ordered_timestamps.get(i + 1);
-                let color: Color = match ts <= &current_time {
+                let colour: Color = match ts <= &current_time {
                     true => {
                         if let Some(next_ts) = next_ts {
                             match current_time < *next_ts {
@@ -147,7 +146,7 @@ fn calculate_styled_text(
                     false => Color::Gray,
                 };
                 let text: Cow<'static, str> = Cow::Owned(text.clone());
-                Line::from(Span::styled(text, Style::default().fg(color)))
+                Line::from(Span::styled(text, Style::default().fg(colour)))
             })
         })
         .collect();
@@ -176,8 +175,11 @@ pub fn draw_lyrics(
         });
     });
 
-    let Ok(styled_lyrics) = receiver.recv() else {
-        return;
+    let styled_lyrics = match receiver.recv() {
+        Ok(lyrics) => lyrics,
+        _ => state.lyrics.lines().map(|line| {
+            Line::from(Span::styled(line, Style::default().fg(colour.into())))
+        }).collect(),
     };
 
     state.scrollbar_state = state.scrollbar_state.content_length(styled_lyrics.len());
