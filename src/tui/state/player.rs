@@ -80,6 +80,31 @@ impl PlayerState {
 
         None
     }
+
+    pub fn tick_progress(&mut self, new_progress: u32) {
+        let Some(ctx) = &mut self.playing else { return };
+        if !ctx.is_playing {
+            return;
+        };
+        let Some(progress) = &mut ctx.progress_ms else {
+            return;
+        };
+
+        *progress += new_progress;
+
+        let duration = ctx
+            .item
+            .as_ref()
+            .and_then(|item| item.as_track())
+            .map(|track| track.duration_ms);
+
+        if let Some(duration) = duration {
+            if *progress > duration {
+                *progress = duration;
+                ctx.is_playing = false;
+            }
+        }
+    }
 }
 
 impl LyricState {

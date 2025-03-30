@@ -138,8 +138,9 @@ impl State {
                 last_tick = Instant::now();
             }
 
-            if last_state_update.elapsed() >= Duration::from_secs(5) {
-                self.get_playing_state().await;
+            let elapsed = last_state_update.elapsed();
+            if elapsed >= Duration::from_millis(100) {
+                self.player.tick_progress(elapsed.as_millis() as _);
                 last_state_update = Instant::now();
             }
 
@@ -263,7 +264,8 @@ impl State {
             .await
             .is_ok()
         {
-            self.update_playing_state().await
+            // self.update_playing_state().await
+            self.get_playing_state().await
         };
     }
 
@@ -284,7 +286,7 @@ impl State {
         };
 
         if result.is_ok() {
-            self.update_playing_state().await;
+            self.get_playing_state().await;
         };
     }
 
@@ -326,7 +328,7 @@ impl State {
             self.lyrics_state.update(lyrics);
         };
     }
-    
+
     /// Changes the necessary states to reflect a playlist being selected.
     fn playlist_page_selected(&mut self) {
         self.tab = Tab::PlaylistPage;

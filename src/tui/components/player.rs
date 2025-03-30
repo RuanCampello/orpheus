@@ -167,12 +167,9 @@ pub fn draw_lyrics(
     let timed_lyrics = &state.timed_lyrics;
     thread::scope(|s| {
         s.spawn(move || {
-            if let Some(styled) = calculate_styled_text(
-                ordered_timestamps,
-                timed_lyrics,
-                progress,
-                &colour,
-            ) {
+            if let Some(styled) =
+                calculate_styled_text(ordered_timestamps, timed_lyrics, progress, &colour)
+            {
                 sender.send(styled).unwrap();
             }
         });
@@ -181,7 +178,7 @@ pub fn draw_lyrics(
     let Ok(styled_lyrics) = receiver.recv() else {
         return;
     };
-    
+
     state.scrollbar_state = state.scrollbar_state.content_length(styled_lyrics.len());
     state.area = area;
 
