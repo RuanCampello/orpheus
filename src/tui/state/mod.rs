@@ -115,6 +115,8 @@ impl State {
         let size = terminal.size()?;
         self.handle_resize(size.width, size.height);
 
+        self.playlist_state.sort_playlists();
+
         // tries to set the first playlist as selected on launch.
         if let Some(first_playlist) = self.playlist_state.as_ref().playlists.first() {
             let uri = first_playlist.uri.to_string();

@@ -93,6 +93,16 @@ impl PlaylistState {
             _ => {}
         }
     }
+
+    /// Sort the playlists based on how many songs they've.
+    pub fn sort_playlists(&mut self) {
+        self.playlists.sort_by(|a, b| {
+            let first_total: Option<u64> = a.tracks.get("total").and_then(|n| n.as_u64());
+            let second_total: Option<u64> = b.tracks.get("total").and_then(|n| n.as_u64());
+
+            second_total.cmp(&first_total)
+        });
+    }
 }
 
 impl Navigable for PlaylistState {
