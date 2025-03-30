@@ -1,3 +1,4 @@
+use crate::internal::debug;
 use crate::internal::image::Rgb;
 use crate::internal::text::{Size, Text as BigText};
 use crate::tui::colours::Palette;

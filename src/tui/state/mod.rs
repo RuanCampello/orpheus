@@ -17,7 +17,7 @@ use rspotify::model::offset::for_position;
 use rspotify::model::search::SearchResult;
 use rspotify::model::PlayingItem;
 use rspotify::senum::SearchType;
-use std::io::{self, Stdout, Write};
+use std::io::{self, Stdout};
 use std::time::{Duration, Instant};
 
 /// Defines the page that should be rendered in the main area.
@@ -108,7 +108,7 @@ impl State {
         let mut last_state_update = Instant::now();
 
         // fetches the currently playing state on the launch.
-        self.update_playing_state().await;
+        self.get_playing_state().await;
         self.get_current_song_lyrics().await;
 
         // updates the window size on first launch.
@@ -197,12 +197,6 @@ impl State {
         }
     }
 
-    /// Manual currently playing update.
-    pub(super) async fn update_playing_state(&mut self) {
-        self.get_playing_state().await;
-        self.get_current_song_lyrics().await;
-    }
-
     pub(super) async fn search(&mut self) {
         let query = self.search_state.input.as_str();
         let tracks_future = create_search_future!(self.client, query, SearchType::Track);
@@ -264,8 +258,8 @@ impl State {
             .await
             .is_ok()
         {
-            // self.update_playing_state().await
-            self.get_playing_state().await
+            self.get_playing_state().await;
+            self.get_current_song_lyrics().await;
         };
     }
 

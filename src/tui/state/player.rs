@@ -140,26 +140,27 @@ impl LyricState {
         self.scrollbar_state = self.scrollbar_state.position(self.offset);
     }
 
-    /// Updates the actual value of the lyrics and it's length.
+    /// Updates the actual value of the lyrics and parse it.
     pub(super) fn update(&mut self, new_lyrics: String) {
-        // TODO: correct the lines counting
-        let count = new_lyrics.lines().count();
-        self.length = count;
         self.lyrics = new_lyrics;
         self.parse_lyrics();
     }
 
     fn parse_lyrics(&mut self) {
-        let Some(timed_lyrics) = self.timed_lyrics.as_mut() else {
-            return;
-        };
-        let Some(ordered_timestamps) = self.ordered_timestamps.as_mut() else {
-            return;
-        };
+        if self.timed_lyrics.is_none() {
+            self.timed_lyrics = Some(HashMap::new());
+        }
+        if self.ordered_timestamps.is_none() {
+            self.ordered_timestamps = Some(Vec::new());
+        }
 
-        let re = Regex::new(r"\[(\d+):(\d+\.\d+)\](.*)").unwrap();
+        let timed_lyrics = self.timed_lyrics.as_mut().unwrap();
+        let ordered_timestamps = self.ordered_timestamps.as_mut().unwrap();
+
         timed_lyrics.clear();
         ordered_timestamps.clear();
+
+        let re = Regex::new(r"\[(\d+):(\d+\.\d+)\](.*)").unwrap();
 
         for line in self.lyrics.lines() {
             if let Some(caps) = re.captures(line) {
@@ -168,7 +169,7 @@ impl LyricState {
                 let timestamp = (minutes * 60 * 1000) + (seconds * 1000.0) as u32;
                 let text = caps[3].trim().to_string();
 
-                timed_lyrics.insert(timestamp, text.clone());
+                timed_lyrics.insert(timestamp, text);
                 ordered_timestamps.push(timestamp);
             }
         }
