@@ -146,6 +146,7 @@ impl State {
                 if let Some(playing) = &self.player.playing {
                     if !playing.is_playing {
                         self.get_playing_state().await;
+                        self.get_current_song_lyrics().await;
                     }
                 }
 
