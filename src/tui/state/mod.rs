@@ -143,6 +143,12 @@ impl State {
             let elapsed = last_state_update.elapsed();
             if elapsed >= Duration::from_millis(100) {
                 self.player.tick_progress(elapsed.as_millis() as _);
+                if let Some(playing) = &self.player.playing {
+                    if !playing.is_playing {
+                        self.get_playing_state().await;
+                    }
+                }
+
                 last_state_update = Instant::now();
             }
 
@@ -173,7 +179,7 @@ impl State {
         self.playlist_state.selected_playlist.playlist = Some(playlist);
     }
 
-    /// Tries to update the currently playing state every 5 seconds.
+    /// Tries to update the currently playing state.
     pub(super) async fn get_playing_state(&mut self) {
         if let Ok(playing) = self.client.spotify.current_playback(None, None).await {
             let image_url = playing

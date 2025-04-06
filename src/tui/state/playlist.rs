@@ -34,7 +34,13 @@ pub trait Playable {
 impl Playable for &PlaylistState {
     fn get_selected_track(&self) -> (Option<String>, Option<usize>, Option<String>) {
         let selected_playlist = self.selected_playlist.playlist.as_ref();
-        let idx = self.selected_playlist.state.state.selected().unwrap_or(0);
+        let idx = self
+            .selected_playlist
+            .state
+            .state
+            .selected()
+            .unwrap_or(0)
+            .saturating_add(self.offset as usize);
         let identifier = selected_playlist.map(|playlist| playlist.uri.to_string());
 
         let uri = selected_playlist
