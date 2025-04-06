@@ -238,7 +238,7 @@ impl State {
 
         let (uris, context_uri, offset) = if context_uri.is_some() && !is_from_new_ctx {
             (None, context_uri, offset)
-        } else if uris.is_none() {
+        } else if offset.is_some() {
             let new_context = self
                 .playlist_state
                 .selected_playlist

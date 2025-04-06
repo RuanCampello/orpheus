@@ -29,9 +29,11 @@ impl Client {
     }
 }
 
-pub fn debug<I: Debug>(filename: &str, item: I) {
+pub fn debug<I: Debug>(filename: &str, items: &[I]) {
     let mut file = File::create(filename).unwrap();
-    file.write_all(format!("{item:#?}").as_bytes()).unwrap();
+    for item in items {
+        file.write_all(format!("{item:#?}").as_bytes()).unwrap();
+    }
 }
 
 pub async fn get_token(spotify_oauth: &mut SpotifyOAuth, port: u16) -> Option<TokenInfo> {

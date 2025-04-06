@@ -59,8 +59,7 @@ impl Lyra {
 
         Ok(match is_synced {
             true => (search.synced_lyrics.unwrap(), is_synced),
-            false => (search.plain_lyrics, is_synced)
+            false => (search.plain_lyrics, is_synced),
         })
     }
 }
-
