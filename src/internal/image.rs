@@ -47,7 +47,7 @@ pub(crate) async fn colour_from_image<'u>(url: &'u str) -> Result<Rgb> {
     if let Some(entry) = CACHE.get(url) {
         let (cached_hash, cached_colour) = entry.value();
         if *cached_hash == hash {
-            return Ok(cached_colour.clone());
+            return Ok(*cached_colour);
         }
     }
 
@@ -142,7 +142,7 @@ pub(crate) async fn colour_from_image<'u>(url: &'u str) -> Result<Rgb> {
     }
 
     let colour = Rgb(best_colour.0, best_colour.1, best_colour.2);
-    CACHE.insert(url.to_string(), (hash, colour.clone()));
+    CACHE.insert(url.to_string(), (hash, colour));
 
     Ok(colour)
 }

@@ -111,7 +111,7 @@ impl State {
         self.get_playing_state().await;
         self.get_current_song_lyrics().await;
 
-        // updates the window size on first launch.
+        // updates the window size on the first launch.
         let size = terminal.size()?;
         self.handle_resize(size.width, size.height);
 
@@ -161,7 +161,7 @@ impl State {
 
     /// Fetch a given playlist uri and updates the respective states.
     pub(super) async fn select_playlist(&mut self, uri: String) {
-        // ignore if the user re-select the current selected playlist
+        // ignore if the user re-selects the current selected playlist
         if let Some(playlist) = self.playlist_state.selected_playlist.playlist.as_ref() {
             if playlist.uri == uri {
                 self.playlist_page_selected();

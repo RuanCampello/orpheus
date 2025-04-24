@@ -3,6 +3,7 @@ use crate::tui::state::WindowSize;
 use ratatui::crossterm::event::{MouseButton, MouseEvent, MouseEventKind};
 use ratatui::layout::{Position, Rect};
 use ratatui::widgets::ScrollbarState;
+use ratatui_image::protocol::StatefulProtocol;
 use regex::Regex;
 use rspotify::model::context::CurrentlyPlaybackContext;
 use rspotify::model::{track, PlayingItem};
@@ -10,7 +11,7 @@ use std::collections::HashMap;
 
 pub(in crate::tui) struct PlayerState {
     pub playing: Option<CurrentlyPlaybackContext>,
-    pub image: Option<Image>,
+    pub image: PlayerImage,
 }
 
 #[derive(Default)]
@@ -36,32 +37,41 @@ pub(in crate::tui) struct LyricState {
     pub(crate) current_time: u32,
 }
 
+pub(in crate::tui) enum PlayerImage {
+    Ascii(Image),
+    Image(StatefulProtocol),
+}
+
 impl PlayerState {
     pub fn new() -> Self {
         Self {
             playing: None,
-            image: None,
+            image: PlayerImage::default(),
         }
     }
 
     /// Create and update ascii image if the window size or the image source has changed.
     pub async fn update_current_image(&mut self, url: &str, height: u16, width: u16) {
-        if let Some(current_image) = &self.image {
-            let same_size = current_image.rendered_at_size.height == height
-                && current_image.rendered_at_size.width == width;
+        match &self.image {
+            PlayerImage::Ascii(ascii_image) => {
+                let same_size = ascii_image.rendered_at_size.height == height
+                    && ascii_image.rendered_at_size.width == width;
 
-            if current_image.image_url == url && same_size {
-                return;
+                if ascii_image.image_url == url && same_size {
+                    return;
+                }
+
+                self.image = PlayerImage::Ascii(Image {
+                    ascii: image_url_to_ascii(url, &height, &width)
+                        .await
+                        .unwrap_or_default(),
+                    image_url: url.to_string(),
+                    rendered_at_size: WindowSize { height, width },
+                });
             }
-        }
 
-        self.image = Some(Image {
-            ascii: image_url_to_ascii(url, &height, &width)
-                .await
-                .unwrap_or_default(),
-            image_url: url.to_string(),
-            rendered_at_size: WindowSize { height, width },
-        });
+            _ => {}
+        }
     }
 
     pub fn get_artist_name(&self) -> Option<&str> {
@@ -185,6 +195,12 @@ impl LyricState {
 
     pub fn update_time(&mut self, current_time: &u32) {
         self.current_time = *current_time;
+    }
+}
+
+impl Default for PlayerImage {
+    fn default() -> Self {
+        PlayerImage::Ascii(Image::default())
     }
 }
 

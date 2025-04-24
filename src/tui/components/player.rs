@@ -2,7 +2,7 @@ use crate::internal::image::Rgb;
 use crate::internal::text::{Size, Text as BigText};
 use crate::tui::colours::Palette;
 use crate::tui::components::{pad, time_from_ms, BlockExt};
-use crate::tui::state::player::{AsTrack, LyricState};
+use crate::tui::state::player::{AsTrack, LyricState, PlayerImage};
 use crate::tui::state::State;
 use deunicode::deunicode;
 use ratatui::layout::{Constraint, Layout, Margin, Rect};
@@ -32,14 +32,18 @@ pub fn draw_player<'a>(frame: &'a mut Frame, state: &'a mut State, area: Rect) {
     let [title_area, remaining_area] =
         Layout::vertical([Constraint::Length(4), Constraint::Min(0)]).areas(remaining_area);
 
-    if let Some(image) = &state.player.image {
-        let image = Paragraph::new(image.ascii.to_string())
-            .block(Block::new().secondary_border())
-            .style(Style::new().fg(match playing.is_playing {
-                true => Color::White,
-                false => Palette::Foreground.into(),
-            }));
-        frame.render_widget(image, image_area);
+    #[allow(clippy::single_match)]
+    match &state.player.image {
+        PlayerImage::Ascii(image) => {
+            let image = Paragraph::new(image.ascii.to_string())
+                .block(Block::new().secondary_border())
+                .style(Style::new().fg(match playing.is_playing {
+                    true => Color::White,
+                    false => Palette::Foreground.into(),
+                }));
+            frame.render_widget(image, image_area);
+        }
+        _ => {}
     }
 
     let song = playing
@@ -177,9 +181,11 @@ pub fn draw_lyrics(
 
     let styled_lyrics = match receiver.recv() {
         Ok(lyrics) => lyrics,
-        _ => state.lyrics.lines().map(|line| {
-            Line::from(Span::styled(line, Style::default().fg(colour.into())))
-        }).collect(),
+        _ => state
+            .lyrics
+            .lines()
+            .map(|line| Line::from(Span::styled(line, Style::default().fg(colour.into()))))
+            .collect(),
     };
 
     state.scrollbar_state = state.scrollbar_state.content_length(styled_lyrics.len());
