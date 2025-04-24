@@ -15,6 +15,7 @@ use ratatui::widgets::{
     Wrap,
 };
 use ratatui::Frame;
+use ratatui_image::StatefulImage;
 use std::borrow::Cow;
 use std::collections::HashMap;
 use std::ops::Div;
@@ -32,8 +33,11 @@ pub fn draw_player<'a>(frame: &'a mut Frame, state: &'a mut State, area: Rect) {
     let [title_area, remaining_area] =
         Layout::vertical([Constraint::Length(4), Constraint::Min(0)]).areas(remaining_area);
 
-    #[allow(clippy::single_match)]
-    match &state.player.image {
+    match &mut state.player.image {
+        PlayerImage::Image(image) => {
+            // FIXME: handle resize updates
+            frame.render_stateful_widget(StatefulImage::default(), image_area, image)
+        }
         PlayerImage::Ascii(image) => {
             let image = Paragraph::new(image.ascii.to_string())
                 .block(Block::new().secondary_border())
@@ -43,7 +47,6 @@ pub fn draw_player<'a>(frame: &'a mut Frame, state: &'a mut State, area: Rect) {
                 }));
             frame.render_widget(image, image_area);
         }
-        _ => {}
     }
 
     let song = playing

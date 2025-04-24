@@ -6,7 +6,7 @@ use crate::internal::config::Config;
 use crate::internal::image::{colour_from_image, Rgb};
 use crate::internal::Client;
 use crate::tui::draw;
-use crate::tui::state::player::{AsTrack, LyricState, PlayerState};
+use crate::tui::state::player::{AsTrack, LyricState, PlayerImage, PlayerState};
 use crate::tui::state::playlist::PlaylistState;
 use crate::tui::state::search::{ResultItem, SearchState};
 use ratatui::backend::CrosstermBackend;
@@ -199,7 +199,7 @@ impl State {
 
             self.colour = colour_from_image(image_url).await.unwrap_or_default();
             self.player
-                .update_current_image(image_url, self.window.height, self.window.width)
+                .update_current_image((image_url, self.window.height, self.window.width))
                 .await;
 
             self.player.playing = playing;

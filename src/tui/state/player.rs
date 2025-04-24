@@ -3,6 +3,7 @@ use crate::tui::state::WindowSize;
 use ratatui::crossterm::event::{MouseButton, MouseEvent, MouseEventKind};
 use ratatui::layout::{Position, Rect};
 use ratatui::widgets::ScrollbarState;
+use ratatui_image::picker::Picker;
 use ratatui_image::protocol::StatefulProtocol;
 use regex::Regex;
 use rspotify::model::context::CurrentlyPlaybackContext;
@@ -42,6 +43,10 @@ pub(in crate::tui) enum PlayerImage {
     Image(StatefulProtocol),
 }
 
+pub(in crate::tui) trait UpdateImage {
+    async fn apply(self, player: &mut PlayerState);
+}
+
 impl PlayerState {
     pub fn new() -> Self {
         Self {
@@ -51,27 +56,8 @@ impl PlayerState {
     }
 
     /// Create and update ascii image if the window size or the image source has changed.
-    pub async fn update_current_image(&mut self, url: &str, height: u16, width: u16) {
-        match &self.image {
-            PlayerImage::Ascii(ascii_image) => {
-                let same_size = ascii_image.rendered_at_size.height == height
-                    && ascii_image.rendered_at_size.width == width;
-
-                if ascii_image.image_url == url && same_size {
-                    return;
-                }
-
-                self.image = PlayerImage::Ascii(Image {
-                    ascii: image_url_to_ascii(url, &height, &width)
-                        .await
-                        .unwrap_or_default(),
-                    image_url: url.to_string(),
-                    rendered_at_size: WindowSize { height, width },
-                });
-            }
-
-            _ => {}
-        }
+    pub async fn update_current_image<Up: UpdateImage>(&mut self, image: Up) {
+        image.apply(self).await;
     }
 
     pub fn get_artist_name(&self) -> Option<&str> {
@@ -195,6 +181,46 @@ impl LyricState {
 
     pub fn update_time(&mut self, current_time: &u32) {
         self.current_time = *current_time;
+    }
+}
+
+impl UpdateImage for (&str, u16, u16) {
+    async fn apply(self, player: &mut PlayerState) {
+        let (url, height, width) = self;
+
+        if let PlayerImage::Ascii(ascii_image) = &player.image {
+            let same_size = ascii_image.rendered_at_size.height == height
+                && ascii_image.rendered_at_size.width == width;
+
+            if ascii_image.image_url == url && same_size {
+                return;
+            }
+
+            player.image = PlayerImage::Ascii(Image {
+                ascii: image_url_to_ascii(url, &height, &width)
+                    .await
+                    .unwrap_or_default(),
+                image_url: url.to_string(),
+                rendered_at_size: WindowSize { height, width },
+            });
+        }
+    }
+}
+
+impl UpdateImage for &str {
+    async fn apply(self, player: &mut PlayerState) {
+        let picker = Picker::from_fontsize((8, 12));
+
+        let req = reqwest::get(self).await.unwrap();
+        let bytes = req.bytes().await.unwrap();
+
+        let image = image::load_from_memory(&bytes).unwrap();
+        // let width = img.width();
+        // let height = img.height();
+
+        let protocol = picker.new_resize_protocol(image);
+
+        player.image = PlayerImage::Image(protocol);
     }
 }
 
