@@ -245,7 +245,9 @@ impl State {
 
         let (uris, context_uri, offset) = if context_uri.is_some() && !is_from_new_ctx {
             (None, context_uri, offset)
-        } else if offset.is_some() {
+        } else if self.tab.eq(&Tab::SearchResults) {
+            (uris, None, None)
+        } else {
             let new_context = self
                 .playlist_state
                 .selected_playlist
@@ -254,8 +256,6 @@ impl State {
                 .map(|playlist| playlist.uri.to_string());
 
             (None, new_context, offset)
-        } else {
-            (uris, None, None)
         };
 
         let offset = offset.and_then(|o| for_position(o as u32));
