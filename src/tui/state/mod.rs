@@ -114,11 +114,7 @@ impl State {
         let mut last_tick = Instant::now();
         let mut last_state_update = Instant::now();
 
-        // fetches the currently playing state on the launch.
-        let (playing_info, (content, is_synced)) =
-            tokio::join!(self.get_playing_state(), self.get_current_song_lyrics());
-        self.apply_playing_info(playing_info).await;
-        self.apply_lyrics(content, is_synced);
+        self.update_playing_state().await;
 
         // updates the window size on the first launch.
         let size = terminal.size()?;
@@ -212,20 +208,6 @@ impl State {
         }
     }
 
-    pub(super) async fn apply_playing_info(&mut self, info: PlayingInfo) {
-        self.player
-            .update_current_image(
-                info.image_url.as_str(),
-                self.window.height,
-                self.window.width,
-                &self.config.player_image_kind,
-            )
-            .await;
-
-        self.colour = info.colour;
-        self.player.playing = info.playing;
-    }
-
     pub(super) async fn search(&mut self) {
         let query = self.search_state.input.as_str();
         let tracks_future = create_search_future!(self.client, query, SearchType::Track);
@@ -287,8 +269,7 @@ impl State {
             .await
             .is_ok()
         {
-            self.get_playing_state().await;
-            self.get_current_song_lyrics().await;
+            self.update_playing_state().await;
         };
     }
 
@@ -308,9 +289,7 @@ impl State {
             }
         };
 
-        if result.is_ok() {
-            self.get_playing_state().await;
-        };
+        self.update_playing_state().await;
     }
 
     pub(super) async fn update_volume(&mut self, action: VolumeAction) {
@@ -331,7 +310,6 @@ impl State {
         }
     }
 
-    /// Updates the `LyricState` based on the playing track.
     pub(super) async fn get_current_song_lyrics(&self) -> (String, bool) {
         let (content, is_synced) = match async {
             let song = self.player.playing.as_ref()?;
@@ -351,13 +329,24 @@ impl State {
         (content, is_synced)
     }
 
-    pub fn apply_lyrics(&mut self, content: String, is_synced: bool) {
-        self.lyrics_state.reset_lyrics();
-        self.lyrics_state.update(content, is_synced);
-    }
-
     pub(super) fn get_player_image_kind(&self) -> &ImageKind {
         &self.config.player_image_kind
+    }
+
+    /// Fetches and updates the [currently playing state](PlayerState) and [lyrics](LyricState).
+    async fn update_playing_state(&mut self) {
+        let playing_info = self.get_playing_state().await;
+        let update_colour = |colour| self.colour = colour;
+        let image_kind = &self.config.player_image_kind;
+        let window = &self.window;
+
+        // TODO: we may find a way to do that it in parallel if one doesn't need the other
+        self.player
+            .apply_playing_info(image_kind, playing_info, window, update_colour)
+            .await;
+
+        let (content, is_synced) = self.get_current_song_lyrics().await;
+        self.lyrics_state.update(content, is_synced);
     }
 
     /// Changes the necessary states to reflect a playlist being selected.

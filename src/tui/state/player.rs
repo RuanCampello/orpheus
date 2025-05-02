@@ -1,6 +1,6 @@
 use crate::internal::config::ImageKind;
-use crate::internal::image::image_url_to_ascii;
-use crate::tui::state::WindowSize;
+use crate::internal::image::{image_url_to_ascii, Rgb};
+use crate::tui::state::{PlayingInfo, WindowSize};
 use image::DynamicImage;
 use ratatui::crossterm::event::{MouseButton, MouseEvent, MouseEventKind};
 use ratatui::layout::{Position, Rect};
@@ -70,8 +70,9 @@ impl PlayerState {
         match kind {
             ImageKind::Ascii => {
                 if let PlayerImage::Ascii(current) = &self.image {
-                    let same_size = current.rendered_at_size.height == height && current.rendered_at_size.width == width;
-                    
+                    let same_size = current.rendered_at_size.height == height
+                        && current.rendered_at_size.width == width;
+
                     if same_size && current.image_url == url {
                         return;
                     }
@@ -134,6 +135,19 @@ impl PlayerState {
             }
         }
     }
+
+    pub(super) async fn apply_playing_info<F: FnOnce(Rgb)>(
+        &mut self,
+        kind: &ImageKind,
+        info: PlayingInfo,
+        window: &WindowSize,
+        update_colour: F,
+    ) {
+        self.update_current_image(info.image_url.as_str(), window.height, window.width, kind)
+            .await;
+        update_colour(info.colour);
+        self.playing = info.playing;
+    }
 }
 
 impl LyricState {
@@ -171,6 +185,7 @@ impl LyricState {
 
     /// Updates the actual value of the lyrics and parse it if needed.
     pub(super) fn update(&mut self, new_lyrics: String, is_synced: bool) {
+        self.reset_lyrics();
         self.lyrics = new_lyrics;
 
         match is_synced {
