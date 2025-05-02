@@ -7,6 +7,6 @@ pub struct SearchResponse {
     // pub track_name: String,
     // pub artist_name: String,
     // pub duration: u32,
-    pub plain_lyrics: String,
+    pub plain_lyrics: Option<String>,
     pub synced_lyrics: Option<String>,
 }

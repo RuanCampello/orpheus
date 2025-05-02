@@ -15,7 +15,7 @@ use ratatui::widgets::{
     Wrap,
 };
 use ratatui::Frame;
-use ratatui_image::StatefulImage;
+use ratatui_image::{Resize, StatefulImage};
 use std::borrow::Cow;
 use std::collections::HashMap;
 use std::ops::Div;
@@ -36,7 +36,11 @@ pub fn draw_player<'a>(frame: &'a mut Frame, state: &'a mut State, area: Rect) {
     match &mut state.player.image {
         PlayerImage::Image(image) => {
             // FIXME: handle resize updates
-            frame.render_stateful_widget(StatefulImage::default(), image_area, image)
+            frame.render_stateful_widget(
+                StatefulImage::default().resize(Resize::Scale(None)),
+                image_area,
+                image,
+            )
         }
         PlayerImage::Ascii(image) => {
             let image = Paragraph::new(image.ascii.to_string())

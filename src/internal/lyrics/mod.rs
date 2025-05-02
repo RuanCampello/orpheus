@@ -11,8 +11,8 @@ pub enum Error {
     Client(#[from] reqwest::Error),
     #[error("Parsing error: {0}")]
     Parse(#[from] serde_json::Error),
-    #[error("Lyrics for song {0} was not found")]
-    NotFound(String),
+    #[error("Lyrics for this song was not found")]
+    NotFound,
 }
 
 const BASE_URL: &str = "https://lrclib.net";
@@ -55,11 +55,21 @@ impl Lyra {
             .search(artist, name.split("-").next().unwrap_or(name))
             .await?;
 
+        let has_lyrics = search
+            .synced_lyrics
+            .as_ref()
+            .map_or(false, |s| !s.is_empty())
+            || search.plain_lyrics.is_some();
+
+        if !has_lyrics {
+            return Err(Error::NotFound);
+        }
+
         let is_synced = search.synced_lyrics.is_some();
 
         Ok(match is_synced {
             true => (search.synced_lyrics.unwrap(), is_synced),
-            false => (search.plain_lyrics, is_synced),
+            false => (search.plain_lyrics.unwrap(), is_synced),
         })
     }
 }

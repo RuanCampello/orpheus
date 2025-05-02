@@ -6,7 +6,7 @@ use crate::internal::config::Config;
 use crate::internal::image::{colour_from_image, Rgb};
 use crate::internal::Client;
 use crate::tui::draw;
-use crate::tui::state::player::{AsTrack, LyricState, PlayerImage, PlayerState};
+use crate::tui::state::player::{AsTrack, LyricState, PlayerState};
 use crate::tui::state::playlist::PlaylistState;
 use crate::tui::state::search::{ResultItem, SearchState};
 use ratatui::backend::CrosstermBackend;
@@ -147,6 +147,7 @@ impl State {
                     if !playing.is_playing {
                         self.get_playing_state().await;
                         self.get_current_song_lyrics().await;
+                        // println!("1");
                     }
                 }
 
@@ -327,9 +328,15 @@ impl State {
             .unwrap()
             .name;
 
-        if let Ok((content, is_synced)) = self.client.lyra.get_song_lyrics(artist_name, name).await
-        {
-            self.lyrics_state.update(content, is_synced);
+        self.lyrics_state.reset_lyrics();
+
+        match self.client.lyra.get_song_lyrics(artist_name, name).await {
+            Ok((content, is_synced)) => self.lyrics_state.update(content, is_synced),
+            Err(_) => {
+                let placeholder =
+                    String::from("Looks like we couldn't find the lyrics for this song.");
+                self.lyrics_state.update(placeholder, false)
+            }
         };
     }
 

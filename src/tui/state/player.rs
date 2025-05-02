@@ -140,11 +140,19 @@ impl LyricState {
     pub(super) fn update(&mut self, new_lyrics: String, is_synced: bool) {
         self.lyrics = new_lyrics;
 
-        if is_synced {
-            self.parse_lyrics();
-        } else {
-            self.length = self.lyrics.lines().count();
+        match is_synced {
+            true => self.parse_lyrics(),
+            false => self.length = self.lyrics.lines().count(),
         }
+    }
+
+    pub(super) fn reset_lyrics(&mut self) {
+        self.timed_lyrics = None;
+        self.ordered_timestamps = None;
+        self.length = 0;
+        self.lyrics = String::new();
+        self.offset = 0;
+        self.scrollbar_state = ScrollbarState::default();
     }
 
     fn parse_lyrics(&mut self) {
@@ -213,10 +221,7 @@ impl UpdateImage for &str {
 
         let req = reqwest::get(self).await.unwrap();
         let bytes = req.bytes().await.unwrap();
-
         let image = image::load_from_memory(&bytes).unwrap();
-        // let width = img.width();
-        // let height = img.height();
 
         let protocol = picker.new_resize_protocol(image);
 
