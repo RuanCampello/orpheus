@@ -69,6 +69,13 @@ impl PlayerState {
     ) {
         match kind {
             ImageKind::Ascii => {
+                if let PlayerImage::Ascii(current) = &self.image {
+                    let same_size = current.rendered_at_size.height == height && current.rendered_at_size.width == width;
+                    
+                    if same_size && current.image_url == url {
+                        return;
+                    }
+                };
                 self.image = PlayerImage::Ascii(AsciiImage {
                     ascii: image_url_to_ascii(url, &height, &width)
                         .await
