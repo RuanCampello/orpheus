@@ -12,6 +12,7 @@ use crate::tui::state::search::{ResultItem, SearchState};
 use ratatui::backend::CrosstermBackend;
 use ratatui::crossterm::event::{self, Event};
 use ratatui::Terminal;
+use rspotify::model::context::CurrentlyPlaybackContext;
 use rspotify::model::device::Device;
 use rspotify::model::offset::for_position;
 use rspotify::model::search::SearchResult;
@@ -57,6 +58,12 @@ pub(crate) struct State {
 pub(in crate::tui) struct WindowSize {
     pub height: u16,
     pub width: u16,
+}
+
+pub(in crate::tui) struct PlayingInfo {
+    playing: Option<CurrentlyPlaybackContext>,
+    colour: Rgb,
+    image_url: String,
 }
 
 macro_rules! create_search_future {
@@ -108,8 +115,10 @@ impl State {
         let mut last_state_update = Instant::now();
 
         // fetches the currently playing state on the launch.
-        self.get_playing_state().await;
-        self.get_current_song_lyrics().await;
+        let (playing_info, (content, is_synced)) =
+            tokio::join!(self.get_playing_state(), self.get_current_song_lyrics());
+        self.apply_playing_info(playing_info).await;
+        self.apply_lyrics(content, is_synced);
 
         // updates the window size on the first launch.
         let size = terminal.size()?;
@@ -174,33 +183,47 @@ impl State {
     }
 
     /// Tries to update the currently playing state.
-    pub(super) async fn get_playing_state(&mut self) {
-        if let Ok(playing) = self.client.spotify.current_playback(None, None).await {
-            let Some(image_url) = playing.as_ref().and_then(|playing| {
-                playing
-                    .item
-                    .as_ref()
-                    .and_then(|item| match item {
-                        PlayingItem::Track(track) => track.album.images.first(),
-                        _ => None,
-                    })
-                    .map(|image| &image.url)
-            }) else {
-                return;
-            };
+    pub(super) async fn get_playing_state(&self) -> PlayingInfo {
+        let playing = self
+            .client
+            .spotify
+            .current_playback(None, None)
+            .await
+            .ok()
+            .flatten();
 
-            self.colour = colour_from_image(image_url).await.unwrap_or_default();
-            self.player
-                .update_current_image(
-                    image_url,
-                    self.window.height,
-                    self.window.width,
-                    &self.config.player_image_kind,
-                )
-                .await;
+        let image_url = playing
+            .as_ref()
+            .and_then(|p| p.item.as_ref())
+            .and_then(|item| match item {
+                PlayingItem::Track(track) => {
+                    track.album.images.first().map(|img| img.url.to_string())
+                }
+                _ => None,
+            })
+            .unwrap_or_default();
 
-            self.player.playing = playing;
+        let colour = colour_from_image(&image_url).await.unwrap_or_default();
+
+        PlayingInfo {
+            image_url,
+            colour,
+            playing,
         }
+    }
+
+    pub(super) async fn apply_playing_info(&mut self, info: PlayingInfo) {
+        self.player
+            .update_current_image(
+                info.image_url.as_str(),
+                self.window.height,
+                self.window.width,
+                &self.config.player_image_kind,
+            )
+            .await;
+
+        self.colour = info.colour;
+        self.player.playing = info.playing;
     }
 
     pub(super) async fn search(&mut self) {
@@ -309,31 +332,28 @@ impl State {
     }
 
     /// Updates the `LyricState` based on the playing track.
-    pub(super) async fn get_current_song_lyrics(&mut self) {
-        let Some(song) = &self.player.playing else {
-            return;
-        };
-        let Some(artist_name) = self.player.get_artist_name() else {
-            return;
+    pub(super) async fn get_current_song_lyrics(&self) -> (String, bool) {
+        let (content, is_synced) = match async {
+            let song = self.player.playing.as_ref()?;
+            let artist = self.player.get_artist_name()?;
+            let name = &song.item.as_ref()?.as_track()?.name;
+            self.client.lyra.get_song_lyrics(artist, name).await.ok()
+        }
+        .await
+        {
+            Some(tuple) => tuple,
+            None => (
+                "Looks like we couldn't find the lyrics for this song.".into(),
+                false,
+            ),
         };
 
-        let name = &song
-            .item
-            .as_ref()
-            .and_then(|item| item.as_track())
-            .unwrap()
-            .name;
+        (content, is_synced)
+    }
 
+    pub fn apply_lyrics(&mut self, content: String, is_synced: bool) {
         self.lyrics_state.reset_lyrics();
-
-        match self.client.lyra.get_song_lyrics(artist_name, name).await {
-            Ok((content, is_synced)) => self.lyrics_state.update(content, is_synced),
-            Err(_) => {
-                let placeholder =
-                    String::from("Looks like we couldn't find the lyrics for this song.");
-                self.lyrics_state.update(placeholder, false)
-            }
-        };
+        self.lyrics_state.update(content, is_synced);
     }
 
     pub(super) fn get_player_image_kind(&self) -> &ImageKind {
