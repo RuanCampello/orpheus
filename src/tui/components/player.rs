@@ -6,6 +6,7 @@ use crate::tui::components::{pad, time_from_ms, BlockExt};
 use crate::tui::state::player::{AsTrack, LyricState, PlayerImage};
 use crate::tui::state::State;
 use deunicode::deunicode;
+use image::imageops::FilterType;
 use ratatui::layout::{Constraint, Layout, Margin, Rect};
 use ratatui::prelude::Stylize;
 use ratatui::style::{Color, Style};
@@ -16,6 +17,7 @@ use ratatui::widgets::{
     Wrap,
 };
 use ratatui::Frame;
+use ratatui_image::{Resize, StatefulImage};
 use std::borrow::Cow;
 use std::collections::HashMap;
 use std::ops::Div;
@@ -37,8 +39,10 @@ pub fn draw_player<'a>(frame: &'a mut Frame, state: &'a mut State, area: Rect) {
 
     match &image_kind {
         ImageKind::Image => {
-            if let PlayerImage::Image(image) = &mut state.player.image {
-                frame.render_widget(ratatui_image::Image::new(image), image_area)
+            if let PlayerImage::Image(protocol) = &mut state.player.image {
+                let image =
+                    StatefulImage::default().resize(Resize::Scale(Some(FilterType::CatmullRom)));
+                frame.render_stateful_widget(image, image_area, protocol);
             }
         }
         ImageKind::Ascii => {

@@ -5,8 +5,7 @@ use ratatui::crossterm::event::{MouseButton, MouseEvent, MouseEventKind};
 use ratatui::layout::{Position, Rect};
 use ratatui::widgets::ScrollbarState;
 use ratatui_image::picker::Picker;
-use ratatui_image::protocol::Protocol;
-use ratatui_image::Resize;
+use ratatui_image::protocol::StatefulProtocol;
 use regex::Regex;
 use rspotify::model::context::CurrentlyPlaybackContext;
 use rspotify::model::{track, PlayingItem};
@@ -42,7 +41,7 @@ pub(in crate::tui) struct LyricState {
 
 pub(in crate::tui) enum PlayerImage {
     Ascii(AsciiImage),
-    Image(Protocol),
+    Image(StatefulProtocol),
 }
 
 impl std::fmt::Debug for PlayerImage {
@@ -81,15 +80,12 @@ impl PlayerState {
                 });
             }
             ImageKind::Image => {
-                let picker = Picker::from_fontsize((12, 24));
+                let picker = Picker::from_fontsize((7, 18));
                 let req = reqwest::get(url).await.unwrap();
                 let bytes = req.bytes().await.unwrap();
                 let image = image::load_from_memory(&bytes).unwrap();
-                let width = (width / 4).saturating_sub(10);
 
-                let protocol = picker
-                    .new_protocol(image, Rect::new(0, 0, width, width), Resize::Scale(None))
-                    .unwrap();
+                let protocol = picker.new_resize_protocol(image);
 
                 self.image = PlayerImage::Image(protocol);
             }
