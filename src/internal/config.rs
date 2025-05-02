@@ -5,7 +5,13 @@ pub struct Config {
     pub client_secret: String,
     pub port: Option<u16>,
 
+    pub player_image_kind: ImageKind,
     pub device_id: Option<String>,
+}
+
+pub enum ImageKind {
+    Ascii,
+    Image,
 }
 
 const PORT: u16 = 8888;
@@ -19,12 +25,17 @@ impl Config {
             .ok()
             .and_then(|p| p.parse().ok())
             .unwrap_or(PORT);
+        let player_image_kind = dotenv::var("PLAYER_IMAGE_KIND")
+            .ok()
+            .map(ImageKind::from)
+            .unwrap_or(ImageKind::Ascii);
 
         Self {
             client_id,
             client_secret,
             port: Some(port),
             device_id: None,
+            player_image_kind,
         }
     }
 
@@ -40,5 +51,14 @@ impl Config {
 
     pub fn get_redirect_uri(&self) -> String {
         format!("http://localhost:{}/callback", self.get_port())
+    }
+}
+
+impl From<String> for ImageKind {
+    fn from(s: String) -> Self {
+        match s.to_lowercase().as_str() {
+            "image" => Self::Image,
+            _ => Self::Ascii,
+        }
     }
 }

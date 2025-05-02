@@ -16,7 +16,7 @@ pub(in crate::tui) struct PlayerState {
     pub image: PlayerImage,
 }
 
-#[derive(Default)]
+#[derive(Default, PartialEq)]
 pub(in crate::tui) struct AsciiImage {
     pub ascii: String,
     pub image_url: String,
@@ -42,15 +42,6 @@ pub(in crate::tui) struct LyricState {
 pub(in crate::tui) enum PlayerImage {
     Ascii(AsciiImage),
     Image(Protocol),
-}
-
-pub(in crate::tui) enum ImageKind {
-    Ascii,
-    Image,
-}
-
-pub(in crate::tui) trait UpdateImage {
-    async fn apply(self, player: &mut PlayerState);
 }
 
 impl PlayerState {

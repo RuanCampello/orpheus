@@ -2,7 +2,7 @@ pub(super) mod player;
 pub(super) mod playlist;
 pub(super) mod search;
 
-use crate::internal::config::Config;
+use crate::internal::config::{Config, ImageKind};
 use crate::internal::image::{colour_from_image, Rgb};
 use crate::internal::Client;
 use crate::tui::draw;
@@ -53,7 +53,7 @@ pub(crate) struct State {
     pub(super) player: PlayerState,
 }
 
-#[derive(Default)]
+#[derive(Default, PartialEq)]
 pub(in crate::tui) struct WindowSize {
     pub height: u16,
     pub width: u16,
@@ -329,6 +329,10 @@ impl State {
                 self.lyrics_state.update(placeholder, false)
             }
         };
+    }
+
+    pub(super) fn get_player_image_kind(&self) -> &ImageKind {
+        &self.config.player_image_kind
     }
 
     /// Changes the necessary states to reflect a playlist being selected.

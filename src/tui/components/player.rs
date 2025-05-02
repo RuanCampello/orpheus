@@ -1,8 +1,8 @@
+use crate::internal::config::ImageKind;
 use crate::internal::image::{window_width_height, Rgb};
 use crate::internal::text::{Size, Text as BigText};
 use crate::tui::colours::Palette;
 use crate::tui::components::{pad, time_from_ms, BlockExt};
-use crate::tui::state::player::PlayerImage::Ascii;
 use crate::tui::state::player::{AsTrack, LyricState, PlayerImage};
 use crate::tui::state::State;
 use deunicode::deunicode;
@@ -33,23 +33,29 @@ pub fn draw_player<'a>(frame: &'a mut Frame, state: &'a mut State, area: Rect) {
     let [title_area, remaining_area] =
         Layout::vertical([Constraint::Length(4), Constraint::Min(0)]).areas(remaining_area);
 
-    match &mut state.player.image {
-        PlayerImage::Image(image) => {
-            let (width, height) = window_width_height(state.window.width, state.window.height);
-            image_area.width = width as _;
-            image_area.height = height as _;
+    let image_kind = state.get_player_image_kind();
 
-            // FIXME: handle resize updates
-            frame.render_widget(ratatui_image::Image::new(image), image_area)
+    match &image_kind {
+        ImageKind::Image => {
+            if let PlayerImage::Image(image) = &mut state.player.image {
+                let (width, height) = window_width_height(state.window.width, state.window.height);
+                // image_area.width = width as _;
+                // image_area.height = height as _;
+                //
+
+                frame.render_widget(ratatui_image::Image::new(image), image_area)
+            }
         }
-        Ascii(ascii) => {
-            let image = Paragraph::new(ascii.ascii.to_string())
-                .block(Block::new().secondary_border())
-                .style(Style::new().fg(match playing.is_playing {
-                    true => Color::White,
-                    false => Palette::Foreground.into(),
-                }));
-            frame.render_widget(image, image_area);
+        ImageKind::Ascii => {
+            if let PlayerImage::Ascii(ascii) = &mut state.player.image {
+                let image = Paragraph::new(ascii.ascii.to_string())
+                    .block(Block::new().secondary_border())
+                    .style(Style::new().fg(match playing.is_playing {
+                        true => Color::White,
+                        false => Palette::Foreground.into(),
+                    }));
+                frame.render_widget(image, image_area);
+            }
         }
     }
 
