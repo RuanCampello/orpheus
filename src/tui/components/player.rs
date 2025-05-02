@@ -27,7 +27,7 @@ pub fn draw_player<'a>(frame: &'a mut Frame, state: &'a mut State, area: Rect) {
         return;
     };
 
-    let [image_area, remaining_area] =
+    let [mut image_area, remaining_area] =
         Layout::vertical([Constraint::Percentage(50), Constraint::Min(0)]).areas(area);
 
     let [title_area, remaining_area] =

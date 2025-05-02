@@ -1,5 +1,4 @@
 use crate::internal::config::ImageKind;
-use crate::internal::debug;
 use crate::internal::image::image_url_to_ascii;
 use crate::tui::state::WindowSize;
 use ratatui::crossterm::event::{MouseButton, MouseEvent, MouseEventKind};
@@ -86,16 +85,11 @@ impl PlayerState {
                 let req = reqwest::get(url).await.unwrap();
                 let bytes = req.bytes().await.unwrap();
                 let image = image::load_from_memory(&bytes).unwrap();
+                let width = (width / 4).saturating_sub(10);
 
                 let protocol = picker
-                    .new_protocol(
-                        image,
-                        Rect::new(0, 0, width as _, height as _),
-                        Resize::Scale(None),
-                    )
+                    .new_protocol(image, Rect::new(0, 0, width, width), Resize::Scale(None))
                     .unwrap();
-
-                debug("sizes.txt", &[width, height]);
 
                 self.image = PlayerImage::Image(protocol);
             }

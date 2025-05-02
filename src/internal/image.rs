@@ -31,7 +31,6 @@ pub(crate) async fn image_url_to_ascii<'a>(
         .decode()?;
 
     let (window_width, window_height) = window_width_height(*window_width, *window_height);
-
     image = image.resize_exact(window_width, window_height, FilterType::Nearest);
 
     let ascii_string = image_to_ascii(&image);
