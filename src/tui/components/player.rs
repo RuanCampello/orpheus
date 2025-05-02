@@ -39,12 +39,16 @@ pub fn draw_player<'a>(frame: &'a mut Frame, state: &'a mut State, area: Rect) {
 
     match &image_kind {
         ImageKind::Image => {
-            if let PlayerImage::Image(protocol) = &mut state.player.image {
+            if let PlayerImage::Image(resizable) = &mut state.player.image {
                 image_area = image_area.inner(Margin::new(1, 1));
+                
+                if !playing.is_playing {
+                    resizable.black_and_white()
+                } 
 
                 let image =
                     StatefulImage::default().resize(Resize::Scale(Some(FilterType::CatmullRom)));
-                frame.render_stateful_widget(image, image_area, protocol);
+                frame.render_stateful_widget(image, image_area, &mut resizable.protocol);
             }
         }
         ImageKind::Ascii => {

@@ -1,6 +1,7 @@
 use crate::internal::config::ImageKind;
 use crate::internal::image::image_url_to_ascii;
 use crate::tui::state::WindowSize;
+use image::DynamicImage;
 use ratatui::crossterm::event::{MouseButton, MouseEvent, MouseEventKind};
 use ratatui::layout::{Position, Rect};
 use ratatui::widgets::ScrollbarState;
@@ -14,13 +15,6 @@ use std::collections::HashMap;
 pub(in crate::tui) struct PlayerState {
     pub playing: Option<CurrentlyPlaybackContext>,
     pub image: PlayerImage,
-}
-
-#[derive(Debug, Default, PartialEq)]
-pub(in crate::tui) struct AsciiImage {
-    pub ascii: String,
-    pub image_url: String,
-    rendered_at_size: WindowSize,
 }
 
 #[derive(Default)]
@@ -41,7 +35,19 @@ pub(in crate::tui) struct LyricState {
 
 pub(in crate::tui) enum PlayerImage {
     Ascii(AsciiImage),
-    Image(StatefulProtocol),
+    Image(ResizableImage),
+}
+
+#[derive(Debug, Default, PartialEq)]
+pub(in crate::tui) struct AsciiImage {
+    pub ascii: String,
+    pub image_url: String,
+    rendered_at_size: WindowSize,
+}
+
+pub(in crate::tui) struct ResizableImage {
+    pub(in crate::tui) protocol: StatefulProtocol,
+    image_buffer: DynamicImage,
 }
 
 impl PlayerState {
@@ -71,14 +77,10 @@ impl PlayerState {
                 });
             }
             ImageKind::Image => {
-                let picker = Picker::from_query_stdio().unwrap();
                 let req = reqwest::get(url).await.unwrap();
-                let bytes = req.bytes().await.unwrap();
-                let image = image::load_from_memory(&bytes).unwrap();
 
-                let protocol = picker.new_resize_protocol(image);
-
-                self.image = PlayerImage::Image(protocol);
+                self.image =
+                    PlayerImage::Image(ResizableImage::new(req.bytes().await.unwrap().to_vec()))
             }
         }
     }
@@ -212,6 +214,27 @@ impl LyricState {
 
     pub fn update_time(&mut self, current_time: &u32) {
         self.current_time = *current_time;
+    }
+}
+
+impl ResizableImage {
+    fn new(buf: Vec<u8>) -> Self {
+        let picker = Picker::from_query_stdio().unwrap();
+        let image = image::load_from_memory(&buf).unwrap();
+        let protocol = picker.new_resize_protocol(image.clone());
+
+        ResizableImage {
+            protocol,
+            image_buffer: image,
+        }
+    }
+
+    pub(in crate::tui) fn black_and_white(&mut self) {
+        let picker = Picker::from_query_stdio().unwrap();
+        self.image_buffer = self.image_buffer.grayscale();
+        let protocol = picker.new_resize_protocol(self.image_buffer.clone());
+
+        self.protocol = protocol;
     }
 }
 
