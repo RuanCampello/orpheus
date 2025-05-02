@@ -48,6 +48,7 @@ pub(in crate::tui) struct AsciiImage {
 pub(in crate::tui) struct ResizableImage {
     pub(in crate::tui) protocol: StatefulProtocol,
     image_buffer: DynamicImage,
+    is_black_and_white: bool,
 }
 
 impl PlayerState {
@@ -226,6 +227,7 @@ impl ResizableImage {
         ResizableImage {
             protocol,
             image_buffer: image,
+            is_black_and_white: false,
         }
     }
 
@@ -235,6 +237,11 @@ impl ResizableImage {
         let protocol = picker.new_resize_protocol(self.image_buffer.clone());
 
         self.protocol = protocol;
+        self.is_black_and_white = true;
+    }
+
+    pub(in crate::tui) fn is_black_and_white(&self) -> bool {
+        self.is_black_and_white
     }
 }
 
