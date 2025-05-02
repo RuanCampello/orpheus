@@ -20,12 +20,16 @@ To run this project locally, set up a `.env` file in the root directory with the
 
 [Get Spotify API Credentials](https://developer.spotify.com/documentation/web-api/)
 
-```env
+```ini
 # Spotify API credentials
 CLIENT_ID=
 CLIENT_SECRET=
 
 RSPOTIFY_REDIRECT_URI=http://localhost:8888/callback
+
+# This determines how the music/album image is rendered in the player widget.
+# It can be set as "ASCII" (default) or "IMAGE" that renders as an actual image.
+PLAYER_IMAGE_KIND="IMAGE"
 ```
 
 3. Run the Application:
@@ -39,4 +43,4 @@ cargo run
 > desktop app, the web client or the Spotify Daemon
 
 
-Checkout the Spotify Daemon [here](https://github.com/Spotifyd/spotifyd).
+Check out the Spotify Daemon [here](https://github.com/Spotifyd/spotifyd).

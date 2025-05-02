@@ -44,15 +44,6 @@ pub(in crate::tui) enum PlayerImage {
     Image(StatefulProtocol),
 }
 
-impl std::fmt::Debug for PlayerImage {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            PlayerImage::Ascii(ascii) => f.debug_tuple("Ascii").field(ascii).finish(),
-            PlayerImage::Image(_) => f.debug_tuple("Image").field(&"<protocol>").finish(),
-        }
-    }
-}
-
 impl PlayerState {
     pub fn new() -> Self {
         Self {
@@ -227,6 +218,15 @@ impl LyricState {
 impl Default for PlayerImage {
     fn default() -> Self {
         PlayerImage::Ascii(AsciiImage::default())
+    }
+}
+
+impl std::fmt::Debug for PlayerImage {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            PlayerImage::Ascii(ascii) => f.debug_tuple("Ascii").field(ascii).finish(),
+            PlayerImage::Image(_) => f.debug_tuple("Image").field(&"<protocol>").finish(),
+        }
     }
 }
 
