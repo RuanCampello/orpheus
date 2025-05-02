@@ -80,7 +80,7 @@ impl PlayerState {
                 });
             }
             ImageKind::Image => {
-                let picker = Picker::from_fontsize((7, 18));
+                let picker = Picker::from_query_stdio().unwrap();
                 let req = reqwest::get(url).await.unwrap();
                 let bytes = req.bytes().await.unwrap();
                 let image = image::load_from_memory(&bytes).unwrap();

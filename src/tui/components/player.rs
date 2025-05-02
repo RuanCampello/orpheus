@@ -40,6 +40,8 @@ pub fn draw_player<'a>(frame: &'a mut Frame, state: &'a mut State, area: Rect) {
     match &image_kind {
         ImageKind::Image => {
             if let PlayerImage::Image(protocol) = &mut state.player.image {
+                image_area = image_area.inner(Margin::new(1, 1));
+
                 let image =
                     StatefulImage::default().resize(Resize::Scale(Some(FilterType::CatmullRom)));
                 frame.render_stateful_widget(image, image_area, protocol);
