@@ -1,5 +1,5 @@
 use crate::internal::config::ImageKind;
-use crate::internal::image::{window_width_height, Rgb};
+use crate::internal::image::Rgb;
 use crate::internal::text::{Size, Text as BigText};
 use crate::tui::colours::Palette;
 use crate::tui::components::{pad, time_from_ms, BlockExt};
@@ -27,7 +27,7 @@ pub fn draw_player<'a>(frame: &'a mut Frame, state: &'a mut State, area: Rect) {
         return;
     };
 
-    let [mut image_area, remaining_area] =
+    let [image_area, remaining_area] =
         Layout::vertical([Constraint::Percentage(50), Constraint::Min(0)]).areas(area);
 
     let [title_area, remaining_area] =
@@ -38,11 +38,6 @@ pub fn draw_player<'a>(frame: &'a mut Frame, state: &'a mut State, area: Rect) {
     match &image_kind {
         ImageKind::Image => {
             if let PlayerImage::Image(image) = &mut state.player.image {
-                let (width, height) = window_width_height(state.window.width, state.window.height);
-                // image_area.width = width as _;
-                // image_area.height = height as _;
-                //
-
                 frame.render_widget(ratatui_image::Image::new(image), image_area)
             }
         }

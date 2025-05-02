@@ -53,7 +53,7 @@ pub(crate) struct State {
     pub(super) player: PlayerState,
 }
 
-#[derive(Default, PartialEq)]
+#[derive(Debug, Default, PartialEq)]
 pub(in crate::tui) struct WindowSize {
     pub height: u16,
     pub width: u16,
@@ -176,24 +176,29 @@ impl State {
     /// Tries to update the currently playing state.
     pub(super) async fn get_playing_state(&mut self) {
         if let Ok(playing) = self.client.spotify.current_playback(None, None).await {
-            let image_url = playing
-                .as_ref()
-                .and_then(|playing| {
-                    playing
-                        .item
-                        .as_ref()
-                        .and_then(|item| match item {
-                            PlayingItem::Track(track) => track.album.images.first(),
-                            _ => None,
-                        })
-                        .map(|image| image.url.as_ref())
-                })
-                .unwrap_or("default_image_url");
+            let Some(image_url) = playing.as_ref().and_then(|playing| {
+                playing
+                    .item
+                    .as_ref()
+                    .and_then(|item| match item {
+                        PlayingItem::Track(track) => track.album.images.first(),
+                        _ => None,
+                    })
+                    .map(|image| &image.url)
+            }) else {
+                return;
+            };
 
             self.colour = colour_from_image(image_url).await.unwrap_or_default();
             self.player
-                .update_current_image(image_url, self.window.height, self.window.width)
+                .update_current_image(
+                    image_url,
+                    self.window.height,
+                    self.window.width,
+                    &self.config.player_image_kind,
+                )
                 .await;
+
             self.player.playing = playing;
         }
     }

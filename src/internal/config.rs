@@ -9,6 +9,7 @@ pub struct Config {
     pub device_id: Option<String>,
 }
 
+#[derive(Debug)]
 pub enum ImageKind {
     Ascii,
     Image,

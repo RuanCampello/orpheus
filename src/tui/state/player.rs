@@ -1,3 +1,5 @@
+use crate::internal::config::ImageKind;
+use crate::internal::debug;
 use crate::internal::image::image_url_to_ascii;
 use crate::tui::state::WindowSize;
 use ratatui::crossterm::event::{MouseButton, MouseEvent, MouseEventKind};
@@ -16,7 +18,7 @@ pub(in crate::tui) struct PlayerState {
     pub image: PlayerImage,
 }
 
-#[derive(Default, PartialEq)]
+#[derive(Debug, Default, PartialEq)]
 pub(in crate::tui) struct AsciiImage {
     pub ascii: String,
     pub image_url: String,
@@ -44,6 +46,15 @@ pub(in crate::tui) enum PlayerImage {
     Image(Protocol),
 }
 
+impl std::fmt::Debug for PlayerImage {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            PlayerImage::Ascii(ascii) => f.debug_tuple("Ascii").field(ascii).finish(),
+            PlayerImage::Image(_) => f.debug_tuple("Image").field(&"<protocol>").finish(),
+        }
+    }
+}
+
 impl PlayerState {
     pub fn new() -> Self {
         Self {
@@ -53,16 +64,15 @@ impl PlayerState {
     }
 
     /// Create and update ascii image if the window size or the image source has changed.
-    pub async fn update_current_image(&mut self, url: &str, height: u16, width: u16) {
-        match &self.image {
-            PlayerImage::Ascii(image) => {
-                let same_size = image.rendered_at_size.height == height
-                    && image.rendered_at_size.width == width;
-
-                if image.image_url == url && same_size {
-                    return;
-                }
-
+    pub async fn update_current_image(
+        &mut self,
+        url: &str,
+        height: u16,
+        width: u16,
+        kind: &ImageKind,
+    ) {
+        match kind {
+            ImageKind::Ascii => {
                 self.image = PlayerImage::Ascii(AsciiImage {
                     ascii: image_url_to_ascii(url, &height, &width)
                         .await
@@ -71,16 +81,21 @@ impl PlayerState {
                     rendered_at_size: WindowSize { height, width },
                 });
             }
-            PlayerImage::Image(_) => {
-                let picker = Picker::from_fontsize((20, 32));
-
+            ImageKind::Image => {
+                let picker = Picker::from_fontsize((12, 24));
                 let req = reqwest::get(url).await.unwrap();
                 let bytes = req.bytes().await.unwrap();
                 let image = image::load_from_memory(&bytes).unwrap();
 
                 let protocol = picker
-                    .new_protocol(image, Rect::new(0, 0, width, height), Resize::Scale(None))
+                    .new_protocol(
+                        image,
+                        Rect::new(0, 0, width as _, height as _),
+                        Resize::Scale(None),
+                    )
                     .unwrap();
+
+                debug("sizes.txt", &[width, height]);
 
                 self.image = PlayerImage::Image(protocol);
             }
