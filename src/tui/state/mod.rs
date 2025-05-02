@@ -143,14 +143,6 @@ impl State {
             let elapsed = last_state_update.elapsed();
             if elapsed >= Duration::from_millis(100) {
                 self.player.tick_progress(elapsed.as_millis() as _);
-                if let Some(playing) = &self.player.playing {
-                    if !playing.is_playing {
-                        self.get_playing_state().await;
-                        self.get_current_song_lyrics().await;
-                        // println!("1");
-                    }
-                }
-
                 last_state_update = Instant::now();
             }
 
@@ -200,9 +192,8 @@ impl State {
 
             self.colour = colour_from_image(image_url).await.unwrap_or_default();
             self.player
-                .update_current_image((image_url, self.window.height, self.window.width))
+                .update_current_image(image_url, self.window.height, self.window.width)
                 .await;
-
             self.player.playing = playing;
         }
     }

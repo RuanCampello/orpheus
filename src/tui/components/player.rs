@@ -1,7 +1,8 @@
-use crate::internal::image::Rgb;
+use crate::internal::image::{window_width_height, Rgb};
 use crate::internal::text::{Size, Text as BigText};
 use crate::tui::colours::Palette;
 use crate::tui::components::{pad, time_from_ms, BlockExt};
+use crate::tui::state::player::PlayerImage::Ascii;
 use crate::tui::state::player::{AsTrack, LyricState, PlayerImage};
 use crate::tui::state::State;
 use deunicode::deunicode;
@@ -15,7 +16,6 @@ use ratatui::widgets::{
     Wrap,
 };
 use ratatui::Frame;
-use ratatui_image::{Resize, StatefulImage};
 use std::borrow::Cow;
 use std::collections::HashMap;
 use std::ops::Div;
@@ -27,7 +27,7 @@ pub fn draw_player<'a>(frame: &'a mut Frame, state: &'a mut State, area: Rect) {
         return;
     };
 
-    let [image_area, remaining_area] =
+    let [mut image_area, remaining_area] =
         Layout::vertical([Constraint::Percentage(50), Constraint::Min(0)]).areas(area);
 
     let [title_area, remaining_area] =
@@ -35,15 +35,15 @@ pub fn draw_player<'a>(frame: &'a mut Frame, state: &'a mut State, area: Rect) {
 
     match &mut state.player.image {
         PlayerImage::Image(image) => {
+            let (width, height) = window_width_height(state.window.width, state.window.height);
+            image_area.width = width as _;
+            image_area.height = height as _;
+
             // FIXME: handle resize updates
-            frame.render_stateful_widget(
-                StatefulImage::default().resize(Resize::Scale(None)),
-                image_area,
-                image,
-            )
+            frame.render_widget(ratatui_image::Image::new(image), image_area)
         }
-        PlayerImage::Ascii(image) => {
-            let image = Paragraph::new(image.ascii.to_string())
+        Ascii(ascii) => {
+            let image = Paragraph::new(ascii.ascii.to_string())
                 .block(Block::new().secondary_border())
                 .style(Style::new().fg(match playing.is_playing {
                     true => Color::White,

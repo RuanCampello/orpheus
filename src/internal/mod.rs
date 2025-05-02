@@ -32,7 +32,7 @@ impl Client {
 pub fn debug<I: Debug>(filename: &str, items: &[I]) {
     let mut file = File::create(filename).unwrap();
     for item in items {
-        file.write_all(format!("{item:#?}").as_bytes()).unwrap();
+        file.write_all(format!("{item:#?}\n").as_bytes()).unwrap();
     }
 }
 

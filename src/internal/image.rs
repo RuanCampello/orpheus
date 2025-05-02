@@ -30,8 +30,7 @@ pub(crate) async fn image_url_to_ascii<'a>(
         .with_guessed_format()?
         .decode()?;
 
-    let window_width = *window_width as u32 / 4;
-    let window_height = (window_height.saturating_sub(7) as u32) / 2;
+    let (window_width, window_height) = window_width_height(*window_width, *window_height);
 
     image = image.resize_exact(window_width, window_height, FilterType::Nearest);
 
@@ -145,6 +144,13 @@ pub(crate) async fn colour_from_image<'u>(url: &'u str) -> Result<Rgb> {
     CACHE.insert(url.to_string(), (hash, colour));
 
     Ok(colour)
+}
+
+pub(crate) fn window_width_height(width: u16, height: u16) -> (u32, u32) {
+    let window_width = width as u32 / 4;
+    let window_height = (height.saturating_sub(7) as u32) / 2;
+
+    (window_width, window_height)
 }
 
 fn image_to_ascii(image: &DynamicImage) -> String {
