@@ -12,7 +12,7 @@ use std::path::PathBuf;
 
 use directories::ProjectDirs;
 use rspotify::{
-    AuthCodeSpotify, Config, Credentials, OAuth,
+    AuthCodePkceSpotify, Config, Credentials, OAuth,
     prelude::{BaseClient, OAuthClient},
     scopes,
 };
@@ -76,7 +76,7 @@ pub enum AuthError {
 ///     // Now you can use `spotify` to make API calls
 /// }
 /// ```
-pub async fn authenticate() -> Result<AuthCodeSpotify, AuthError> {
+pub async fn authenticate() -> Result<AuthCodePkceSpotify, AuthError> {
     let stored = get_or_prompt_credentials()?;
     let cache_path = token_cache_path()?;
 
@@ -84,7 +84,7 @@ pub async fn authenticate() -> Result<AuthCodeSpotify, AuthError> {
         std::fs::create_dir_all(parent).map_err(|_| AuthError::ConfigDir)?;
     }
 
-    let creds = Credentials::new(&stored.client_id, &stored.client_secret);
+    let creds = Credentials::new_pkce(&stored.client_id);
 
     let oauth = OAuth {
         redirect_uri: stored.redirect_uri,
@@ -114,7 +114,7 @@ pub async fn authenticate() -> Result<AuthCodeSpotify, AuthError> {
         ..Default::default()
     };
 
-    let spotify = AuthCodeSpotify::with_config(creds, oauth, config);
+    let mut spotify = AuthCodePkceSpotify::with_config(creds, oauth, config);
     let cached_token = spotify.read_token_cache(true).await;
 
     match cached_token {
@@ -125,7 +125,7 @@ pub async fn authenticate() -> Result<AuthCodeSpotify, AuthError> {
             println!("Opening browser for Spotify authorization...");
 
             let auth_url = spotify
-                .get_authorize_url(false)
+                .get_authorize_url(None)
                 .map_err(|e| AuthError::Authentication(e.to_string()))?;
 
             spotify
@@ -238,7 +238,7 @@ fn prompt_for_credentials() -> Result<StoredCredentials, AuthError> {
     println!("  2. Log in with your Spotify account");
     println!("  3. Click 'Create App'");
     println!("  4. Fill in a name and description (anything you like)");
-    println!("  5. Set the Redirect URI to: http://localhost:8888/callback");
+    println!("  5. Set the Redirect URI to: http://127.0.0.1:8888/callback");
     println!("  6. Check 'Web API' under 'Which API/SDKs are you planning to use?'");
     println!("  7. Accept the terms and click 'Save'");
     println!("  8. Click 'Settings' to find your Client ID and Client Secret");
