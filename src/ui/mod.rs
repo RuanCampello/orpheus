@@ -1,11 +1,14 @@
 //! UI components to be rendered from [state](crate::state::State).
 
+#![allow(unused_variables)]
+
 mod playlist;
+pub(crate) mod style;
 
 use crate::{
-    config::Palette,
     state::{State, handler::Active},
     ui::playlist::draw_playlist_sidebar,
+    ui::style::Palette,
 };
 use ratatui::{
     Frame,
@@ -65,6 +68,8 @@ pub(crate) fn draw(frame: &mut Frame, state: &State) {
     draw_search(frame, state, &palette, header);
     draw_playlist_sidebar(frame, state, &palette, playlist);
 }
+
+fn draw_library(frame: &mut Frame, state: &State, palette: &Palette, area: Rect) {}
 
 fn draw_playing(frame: &mut Frame, state: &State, palette: &Palette, area: Rect) {
     let (active, hovered) = state.currently_active();

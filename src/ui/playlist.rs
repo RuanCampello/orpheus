@@ -1,6 +1,6 @@
 use crate::{
-    config::Palette,
     state::{State, handler::Active},
+    ui::style::Palette,
     ui::{Highlight, pad},
 };
 use ratatui::{

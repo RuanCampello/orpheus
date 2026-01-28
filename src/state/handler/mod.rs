@@ -84,6 +84,19 @@ fn handler(key: Key, state: &mut State) {
             }
             _ => {}
         },
+
+        Key::Right => match state.current_view().hovered {
+            Active::Playlists | Active::Library => match state.current_view().id {
+                ViewId::Home => state.set_current_view(None, Some(Active::Home)),
+                _ => {}
+            },
+            _ => {}
+        },
+
+        Key::Left => match state.current_view().hovered {
+            Active::Album | Active::Home => state.set_current_view(None, Some(Active::Library)),
+            _ => {}
+        },
         _ => {}
     }
 }
