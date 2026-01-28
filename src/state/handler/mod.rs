@@ -2,6 +2,8 @@
 //!
 //! That's used to modify the state based on user interation.
 
+use crate::{io::key::Key, state::State};
+
 /// Represents the full state of the current view.
 ///
 /// To render a screen-based view, like a page in web, we need two main informations:
@@ -30,6 +32,8 @@ pub(crate) enum ViewId {
 pub(crate) enum Active {
     Album,
     Search,
+    Playlists,
+    Playing,
     Home,
     Library,
     None,
@@ -40,3 +44,43 @@ pub const DEFAULT_VIEW: View = View {
     active: Active::None,
     hovered: Active::Library,
 };
+
+pub fn handle(key: Key, state: &mut State) {
+    match key {
+        _ => handle_view(key, state),
+    }
+}
+
+fn handle_view(key: Key, state: &mut State) {
+    let current = state.current_view();
+
+    match current.active {
+        Active::None => handler(key, state),
+        _ => {}
+    }
+}
+
+/// Default event handler for `None` active state.
+pub fn handler(key: Key, state: &mut State) {
+    match key {
+        Key::Enter => {
+            let hovered = state.current_view().hovered;
+            state.set_current_view(Some(hovered), None);
+        }
+
+        Key::Up => match state.current_view().hovered {
+            Active::Playlists => state.set_current_view(None, Some(Active::Library)),
+            Active::Library => state.set_current_view(None, Some(Active::Playlists)),
+            _ => {}
+        },
+
+        Key::Down => match state.current_view().hovered {
+            Active::Library => state.set_current_view(None, Some(Active::Playlists)),
+            Active::Home | Active::Album | Active::Playlists => {
+                state.set_current_view(None, Some(Active::Playing))
+            }
+            _ => {}
+        },
+        _ => {}
+    }
+}
