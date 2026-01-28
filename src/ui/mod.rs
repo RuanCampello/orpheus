@@ -2,13 +2,22 @@
 
 mod playlist;
 
-use crate::{config::Palette, state::State, ui::playlist::draw_playlist_sidebar};
+use crate::{
+    config::Palette,
+    state::{State, handler::Active},
+    ui::playlist::draw_playlist_sidebar,
+};
 use ratatui::{
     Frame,
     layout::{Alignment, Constraint, Layout, Rect},
     style::Style,
     widgets::{Block, Paragraph},
 };
+
+pub struct Highlight {
+    is_active: bool,
+    is_hovered: bool,
+}
 
 #[inline(always)]
 fn pad(content: &str, size: usize) -> String {
@@ -42,13 +51,19 @@ pub(crate) fn draw(frame: &mut Frame, state: &State) {
     ])
     .areas(middle);
 
+    let (active, hovered) = state.currently_active();
+    let highlight = Highlight::new(active == Active::Home, hovered == Active::Home);
+
     frame.render_widget(
-        Block::bordered().border_style(Style::new().fg(palette.accent)),
+        Block::bordered()
+            .border_style(highlight.get(&palette))
+            .title("Main"),
         main,
     );
 
     frame.render_widget(
         Block::bordered()
+            .style(highlight.get(&palette))
             .border_style(Style::new().fg(palette.muted))
             .title(pad("Playing", 1)),
         bottom,
@@ -57,6 +72,8 @@ pub(crate) fn draw(frame: &mut Frame, state: &State) {
     draw_search(frame, state, &palette, header);
     draw_playlist_sidebar(frame, state, &palette, playlist);
 }
+
+fn draw_playing(frame: &mut Frame, state: &State, palette: &Palette, area: Rect) {}
 
 fn draw_search(frame: &mut Frame, state: &State, palette: &Palette, area: Rect) {
     let input = Block::bordered()

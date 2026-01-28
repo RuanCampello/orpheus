@@ -1,7 +1,7 @@
 use crate::{
     config::Palette,
     state::{State, handler::Active},
-    ui::pad,
+    ui::{Highlight, pad},
 };
 use ratatui::{
     Frame,
@@ -10,11 +10,6 @@ use ratatui::{
     text::Span,
     widgets::{Block, List, ListItem, ListState},
 };
-
-pub struct Highlight {
-    is_active: bool,
-    is_hovered: bool,
-}
 
 pub fn draw_playlist_sidebar(frame: &mut Frame, state: &State, palette: &Palette, area: Rect) {
     let items = match &state.playlists {
@@ -26,8 +21,7 @@ pub fn draw_playlist_sidebar(frame: &mut Frame, state: &State, palette: &Palette
         None => vec![],
     };
 
-    let current = state.current_view();
-    let (active, hovered) = (current.active, current.hovered);
+    let (active, hovered) = state.currently_active();
 
     let highlight = Highlight::new(active == Active::Playlists, hovered == Active::Playlists);
 

@@ -57,6 +57,11 @@ impl State {
         }
     }
 
+    pub fn currently_active(&self) -> (Active, Active) {
+        let view = self.current_view();
+        (view.active, view.hovered)
+    }
+
     pub fn current_view(&self) -> &View {
         self.navigation.last().unwrap_or(&DEFAULT_VIEW)
     }
