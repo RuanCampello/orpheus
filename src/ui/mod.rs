@@ -57,23 +57,25 @@ pub(crate) fn draw(frame: &mut Frame, state: &State) {
     frame.render_widget(
         Block::bordered()
             .border_style(highlight.get(&palette))
-            .title("Main"),
+            .title(pad("Main", 1)),
         main,
     );
 
-    frame.render_widget(
-        Block::bordered()
-            .style(highlight.get(&palette))
-            .border_style(Style::new().fg(palette.muted))
-            .title(pad("Playing", 1)),
-        bottom,
-    );
-
+    draw_playing(frame, state, &palette, bottom);
     draw_search(frame, state, &palette, header);
     draw_playlist_sidebar(frame, state, &palette, playlist);
 }
 
-fn draw_playing(frame: &mut Frame, state: &State, palette: &Palette, area: Rect) {}
+fn draw_playing(frame: &mut Frame, state: &State, palette: &Palette, area: Rect) {
+    let (active, hovered) = state.currently_active();
+    let highlight = Highlight::new(active == Active::Playing, hovered == Active::Playing);
+
+    let block = Block::bordered()
+        .style(highlight.get(&palette))
+        .title(pad("Playing", 1));
+
+    frame.render_widget(block, area);
+}
 
 fn draw_search(frame: &mut Frame, state: &State, palette: &Palette, area: Rect) {
     let input = Block::bordered()
