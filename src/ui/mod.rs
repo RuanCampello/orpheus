@@ -7,13 +7,16 @@ pub(crate) mod style;
 
 use crate::{
     state::{State, handler::Active},
-    ui::playlist::draw_playlist_sidebar,
-    ui::style::Palette,
+    ui::{
+        playlist::draw_playlist_sidebar,
+        style::{Icon, IconKind, Palette},
+    },
 };
 use ratatui::{
     Frame,
     layout::{Alignment, Constraint, Layout, Rect},
     style::Style,
+    text::{Line, Span, Text},
     widgets::{Block, Paragraph},
 };
 
@@ -47,12 +50,15 @@ pub(crate) fn draw(frame: &mut Frame, state: &State) {
     ])
     .areas(frame.area());
 
-    let [playlist, main, player] = Layout::horizontal([
+    let [sidebar, main, player] = Layout::horizontal([
         Constraint::Percentage(20),
         Constraint::Min(0),
         Constraint::Length(0),
     ])
     .areas(middle);
+
+    let [library, playlist] =
+        Layout::vertical([Constraint::Length(4), Constraint::Min(0)]).areas(sidebar);
 
     let (active, hovered) = state.currently_active();
     let highlight = Highlight::new(active == Active::Home, hovered == Active::Home);
@@ -64,12 +70,38 @@ pub(crate) fn draw(frame: &mut Frame, state: &State) {
         main,
     );
 
+    draw_library(frame, state, &palette, library);
     draw_playing(frame, state, &palette, bottom);
     draw_search(frame, state, &palette, header);
     draw_playlist_sidebar(frame, state, &palette, playlist);
 }
 
-fn draw_library(frame: &mut Frame, state: &State, palette: &Palette, area: Rect) {}
+fn draw_library(frame: &mut Frame, state: &State, palette: &Palette, area: Rect) {
+    let (active, hovered) = state.currently_active();
+    let highlight = Highlight::new(active == Active::Library, hovered == Active::Library);
+
+    let block = Block::bordered()
+        .title(pad("Pages", 1))
+        .style(highlight.get(&palette));
+
+    let mut lines = vec![];
+
+    lines.push(Line::from(Span::styled(
+        Icon::new(IconKind::Home).to_string(),
+        highlight.get(&palette),
+    )));
+
+    lines.push(Line::from(vec![Span::styled(
+        Icon::new(IconKind::Library).to_string(),
+        highlight.get(&palette),
+    )]));
+
+    let paragraph = Paragraph::new(Text::from(lines))
+        .block(block)
+        .alignment(Alignment::Center);
+
+    frame.render_widget(paragraph, area);
+}
 
 fn draw_playing(frame: &mut Frame, state: &State, palette: &Palette, area: Rect) {
     let (active, hovered) = state.currently_active();

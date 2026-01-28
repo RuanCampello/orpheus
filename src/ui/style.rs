@@ -54,7 +54,7 @@ impl Icon {
 impl Display for Icon {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match (self.kind, self.is_active) {
-            (IconKind::Library, false) => f.write_str("\u{eaa5}"),
+            (IconKind::Library, false) => f.write_str("\u{f00c3}"),
             (IconKind::Library, true) => f.write_str("\u{f02e}"),
 
             (IconKind::Home, false) => f.write_str("\u{f46d}"),
