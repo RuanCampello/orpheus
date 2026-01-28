@@ -34,6 +34,7 @@ pub enum IconKind {
     Home,
 }
 
+#[allow(unused)]
 impl Icon {
     pub fn new(kind: IconKind) -> Self {
         Self {

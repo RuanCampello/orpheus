@@ -19,6 +19,7 @@ use std::{sync::mpsc::Sender, time::Instant};
 
 /// All state that the application holds
 /// in order to render the UI.
+#[allow(unused)]
 pub(crate) struct State {
     pub config: Config,
 

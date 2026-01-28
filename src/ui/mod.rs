@@ -86,6 +86,7 @@ fn draw_library(frame: &mut Frame, state: &State, palette: &Palette, area: Rect)
 
     let mut lines = vec![];
 
+    // TODO: state and view for each line
     lines.push(Line::from(Span::styled(
         Icon::new(IconKind::Home).to_string(),
         highlight.get(&palette),
