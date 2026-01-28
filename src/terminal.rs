@@ -1,6 +1,6 @@
 //! Terminal related code.
 
-use crate::{io::Event, state::State};
+use crate::{io::Event, state::State, ui::draw};
 use ratatui::{
     Terminal,
     crossterm::{
@@ -13,15 +13,12 @@ use ratatui::{
     },
     prelude::CrosstermBackend,
 };
-use std::{
-    io::stdout,
-    sync::{Arc, mpsc::Receiver},
-};
+use std::{io::stdout, sync::Arc};
 use thiserror::Error;
 use tokio::sync::Mutex;
 
 #[derive(Debug, Error)]
-pub(crate) enum TerminalError {
+pub enum TerminalError {
     #[error("Io error from terminal execution: {0}")]
     Io(#[from] std::io::Error),
 }
@@ -37,10 +34,12 @@ pub(crate) async fn start(state: &Arc<Mutex<State>>) -> Result<(), TerminalError
     let mut terminal = Terminal::new(backend)?;
     terminal.hide_cursor()?;
 
-    loop {
-        let state = state.lock().await;
+    let mut is_first_render = true;
 
-        terminal.draw(|mut f| todo!("draw callbacks"))?;
+    loop {
+        let mut state = state.lock().await;
+
+        terminal.draw(|mut f| draw(&mut f, &state))?;
 
         // TODO: add event handler channel
         if event::poll(state.config.tick_rate)? {
@@ -50,6 +49,12 @@ pub(crate) async fn start(state: &Arc<Mutex<State>>) -> Result<(), TerminalError
                 }
                 _ => continue,
             }
+        }
+
+        if is_first_render {
+            state.dispatch(Event::UserPlaylists);
+
+            is_first_render = false;
         }
     }
 

@@ -3,6 +3,7 @@ mod config;
 mod io;
 mod state;
 mod terminal;
+mod ui;
 
 use crate::{
     config::Config,
@@ -13,7 +14,14 @@ use std::sync::{
     Arc,
     mpsc::{Receiver, channel},
 };
+use thiserror::Error;
 use tokio::sync::Mutex;
+
+#[derive(Debug, Error)]
+pub enum Error {
+    #[error(transparent)]
+    Terminal(#[from] terminal::TerminalError),
+}
 
 #[tokio::main]
 async fn main() {
@@ -33,14 +41,14 @@ async fn main() {
 
     std::thread::spawn(move || {
         let mut io = Io::new(spotify, &state);
-        start_tokio(receiver, &mut io);
+        start(receiver, &mut io);
     });
 
     terminal::start(&outer_state).await.unwrap();
 }
 
 #[tokio::main]
-async fn start_tokio<'io>(receiver: Receiver<Event>, io: &mut Io) {
+async fn start<'io>(receiver: Receiver<Event>, io: &mut Io) {
     while let Ok(event) = receiver.recv() {
         io.handle_event(event).await
     }

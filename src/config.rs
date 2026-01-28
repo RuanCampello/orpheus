@@ -21,9 +21,11 @@ pub enum Theme {
 
 #[derive(Debug)]
 pub struct Palette {
-    accent: Colour,
-    text: Colour,
-    subtext: Colour,
+    pub accent: Colour,
+    pub text: Colour,
+    pub subtext: Colour,
+    pub muted: Colour,
+    pub background: Colour,
 }
 
 impl Default for Config {
@@ -35,13 +37,15 @@ impl Default for Config {
     }
 }
 
-impl From<Theme> for Palette {
-    fn from(theme: Theme) -> Self {
+impl From<&Theme> for Palette {
+    fn from(theme: &Theme) -> Self {
         match theme {
             Theme::Catppuccin => Palette {
                 accent: Colour::Rgb(203, 166, 247),
                 text: Colour::Rgb(205, 214, 244),
                 subtext: Colour::Rgb(166, 173, 200),
+                muted: Colour::Rgb(88, 91, 112),
+                background: Colour::Rgb(17, 17, 27),
             },
         }
     }
@@ -49,6 +53,6 @@ impl From<Theme> for Palette {
 
 impl Default for Palette {
     fn default() -> Self {
-        Self::from(Theme::Catppuccin)
+        Palette::from(&Theme::Catppuccin)
     }
 }
