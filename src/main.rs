@@ -16,6 +16,8 @@ use std::sync::{
 };
 use thiserror::Error;
 use tokio::sync::Mutex;
+use tracing::info;
+use tracing_subscriber;
 
 #[derive(Debug, Error)]
 pub enum Error {
@@ -32,6 +34,16 @@ async fn main() {
       std::process::exit(1);
     }
   };
+
+  let file = tracing_appender::rolling::hourly("./logs", "tui.log");
+  let (non_blocking, _guard) = tracing_appender::non_blocking(file);
+  let subscriber = tracing_subscriber::fmt()
+    .with_writer(non_blocking)
+    .with_ansi(false)
+    .finish();
+
+  tracing::subscriber::set_global_default(subscriber)
+    .expect("Failed to set default subscriber for tracing");
 
   let (sender, receiver) = channel::<Event>();
 

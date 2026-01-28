@@ -51,7 +51,7 @@ impl State {
       seek_ms: None,
       is_fetching_playback: false,
       navigation: vec![DEFAULT_VIEW],
-      selected_playlist_index: None,
+      selected_playlist_index: Some(0),
       playlist_tracks: None,
     }
   }

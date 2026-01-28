@@ -34,7 +34,7 @@ pub fn draw_playlist_sidebar(frame: &mut Frame, state: &State, palette: &Palette
     "Playlists",
     &items,
     highlight,
-    Some(0),
+    state.selected_playlist_index,
   );
 }
 
