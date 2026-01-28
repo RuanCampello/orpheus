@@ -1,11 +1,19 @@
 //! Terminal related code.
 
-use crate::{io::Event, state::State, ui::draw};
+use crate::{
+    config::Config,
+    io::{
+        Event,
+        key::{self, EventHandler, Key},
+    },
+    state::State,
+    ui::draw,
+};
 use ratatui::{
     Terminal,
     crossterm::{
         ExecutableCommand,
-        event::{self, DisableMouseCapture, EnableMouseCapture, KeyCode},
+        event::{DisableMouseCapture, EnableMouseCapture},
         execute,
         terminal::{
             EnterAlternateScreen, LeaveAlternateScreen, SetTitle, disable_raw_mode, enable_raw_mode,
@@ -21,9 +29,11 @@ use tokio::sync::Mutex;
 pub enum TerminalError {
     #[error("Io error from terminal execution: {0}")]
     Io(#[from] std::io::Error),
+    #[error("Receiver channel error from key handler: {0}")]
+    Recv(#[from] std::sync::mpsc::RecvError),
 }
 
-pub(crate) async fn start(state: &Arc<Mutex<State>>) -> Result<(), TerminalError> {
+pub(crate) async fn start(config: &Config, state: &Arc<Mutex<State>>) -> Result<(), TerminalError> {
     let mut out = stdout();
     execute!(out, EnterAlternateScreen, EnableMouseCapture)?;
     enable_raw_mode()?;
@@ -34,6 +44,9 @@ pub(crate) async fn start(state: &Arc<Mutex<State>>) -> Result<(), TerminalError
     let mut terminal = Terminal::new(backend)?;
     terminal.hide_cursor()?;
 
+    let event_handler = EventHandler::new(config.tick_rate.as_millis() as _);
+    println!("{duration}", duration = config.tick_rate.as_millis() as u64);
+
     let mut is_first_render = true;
 
     loop {
@@ -41,14 +54,14 @@ pub(crate) async fn start(state: &Arc<Mutex<State>>) -> Result<(), TerminalError
 
         terminal.draw(|mut f| draw(&mut f, &state))?;
 
-        // TODO: add event handler channel
-        if event::poll(state.config.tick_rate)? {
-            match event::read()? {
-                event::Event::Key(key) if key.code == KeyCode::Char('q') => {
+        match event_handler.next()? {
+            key::Event::Input(key) => {
+                if key == Key::Char('q') {
                     break;
                 }
-                _ => continue,
             }
+
+            _ => {}
         }
 
         if is_first_render {

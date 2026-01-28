@@ -44,7 +44,7 @@ async fn main() {
         start(receiver, &mut io);
     });
 
-    terminal::start(&outer_state).await.unwrap();
+    terminal::start(&config, &outer_state).await.unwrap();
 }
 
 #[tokio::main]

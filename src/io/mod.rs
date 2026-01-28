@@ -1,5 +1,7 @@
 //! Async IO operations.
 
+pub(crate) mod key;
+
 use crate::state::State;
 use rspotify::{AuthCodePkceSpotify as Spotify, prelude::OAuthClient};
 use std::sync::Arc;

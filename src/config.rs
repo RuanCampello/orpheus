@@ -4,14 +4,14 @@ use std::time::Duration;
 
 use ratatui::style::Color as Colour;
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub struct Config {
     pub theme: Theme,
     /// Duration in milliseconds between tick events.
     pub tick_rate: Duration,
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Clone, Copy)]
 /// Colour theme used to derive the UI schema.
 pub enum Theme {
     /// From: <https://catppuccin.com/palette/> mauve variant
