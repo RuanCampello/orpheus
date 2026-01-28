@@ -2,6 +2,8 @@
 //!
 //! That's used to modify the state based on user interation.
 
+#![allow(unused)]
+
 use crate::{io::key::Key, state::State};
 
 /// Represents the full state of the current view.
@@ -28,7 +30,7 @@ pub(crate) enum ViewId {
 /// This represents an UI active block.
 ///
 /// An actie block can be wether a selected or hovered block.
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, PartialEq, Clone, Copy)]
 pub(crate) enum Active {
     Album,
     Search,
@@ -47,6 +49,7 @@ pub const DEFAULT_VIEW: View = View {
 
 pub fn handle(key: Key, state: &mut State) {
     match key {
+        Key::Esc => handle_esc(state),
         _ => handle_view(key, state),
     }
 }
@@ -61,7 +64,7 @@ fn handle_view(key: Key, state: &mut State) {
 }
 
 /// Default event handler for `None` active state.
-pub fn handler(key: Key, state: &mut State) {
+fn handler(key: Key, state: &mut State) {
     match key {
         Key::Enter => {
             let hovered = state.current_view().hovered;
@@ -70,7 +73,7 @@ pub fn handler(key: Key, state: &mut State) {
 
         Key::Up => match state.current_view().hovered {
             Active::Playlists => state.set_current_view(None, Some(Active::Library)),
-            Active::Library => state.set_current_view(None, Some(Active::Playlists)),
+            Active::Playing => state.set_current_view(None, Some(Active::Playlists)),
             _ => {}
         },
 
@@ -82,5 +85,11 @@ pub fn handler(key: Key, state: &mut State) {
             _ => {}
         },
         _ => {}
+    }
+}
+
+fn handle_esc(state: &mut State) {
+    match state.current_view().active {
+        _ => state.set_current_view(Some(Active::None), None),
     }
 }

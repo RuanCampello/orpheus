@@ -6,7 +6,7 @@ use crate::{
         Event,
         key::{self, EventHandler, Key},
     },
-    state::State,
+    state::{State, handler},
     ui::draw,
 };
 use ratatui::{
@@ -55,10 +55,13 @@ pub(crate) async fn start(config: &Config, state: &Arc<Mutex<State>>) -> Result<
         terminal.draw(|mut f| draw(&mut f, &state))?;
 
         match event_handler.next()? {
+            // TODO: only quit if not in the search input
             key::Event::Input(key) => {
                 if key == Key::Char('q') {
                     break;
-                }
+                };
+
+                handler::handle(key, &mut state);
             }
 
             _ => {}

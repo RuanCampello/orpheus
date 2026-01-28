@@ -12,6 +12,7 @@ pub(crate) struct EventHandler {
 
 #[derive(Debug, PartialEq, Eq, Hash, Clone, Copy)]
 pub(crate) enum Key {
+    Esc,
     Enter,
     Backspace,
 
@@ -77,6 +78,9 @@ impl From<KeyEvent> for Key {
                 code: KeyCode::Backspace,
                 ..
             } => Self::Backspace,
+            KeyEvent {
+                code: KeyCode::Esc, ..
+            } => Self::Esc,
 
             KeyEvent {
                 code: KeyCode::Left,

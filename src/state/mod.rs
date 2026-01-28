@@ -7,7 +7,7 @@
 //! inputted by the user so that we can build the UI retaining data as possible
 //! and non-blocking.
 
-mod handler;
+pub(crate) mod handler;
 
 use crate::{
     config::Config,

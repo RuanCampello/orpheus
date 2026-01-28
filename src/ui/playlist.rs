@@ -1,4 +1,8 @@
-use crate::{config::Palette, state::State, ui::pad};
+use crate::{
+    config::Palette,
+    state::{State, handler::Active},
+    ui::pad,
+};
 use ratatui::{
     Frame,
     layout::Rect,
@@ -22,7 +26,10 @@ pub fn draw_playlist_sidebar(frame: &mut Frame, state: &State, palette: &Palette
         None => vec![],
     };
 
-    let highlight = Highlight::new(false, false);
+    let current = state.current_view();
+    let (active, hovered) = (current.active, current.hovered);
+
+    let highlight = Highlight::new(active == Active::Playlists, hovered == Active::Playlists);
 
     draw_selectable(
         frame,
