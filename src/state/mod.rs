@@ -7,7 +7,13 @@
 //! inputted by the user so that we can build the UI retaining data as possible
 //! and non-blocking.
 
-use crate::{config::Config, io::Event};
+mod handler;
+
+use crate::{
+    config::Config,
+    io::Event,
+    state::handler::{Active, DEFAULT_VIEW, View},
+};
 use rspotify::model::{CurrentPlaybackContext, Page, PlayableItem, SimplifiedPlaylist};
 use std::{sync::mpsc::Sender, time::Instant};
 
@@ -24,6 +30,8 @@ pub(crate) struct State {
     last_playback_pool: Instant,
     is_fetching_playback: bool,
 
+    navigation: Vec<View>,
+
     seek_ms: Option<u128>,
 }
 
@@ -37,6 +45,7 @@ impl State {
             current_playback_context: None,
             seek_ms: None,
             is_fetching_playback: false,
+            navigation: vec![DEFAULT_VIEW],
         }
     }
 
@@ -45,6 +54,26 @@ impl State {
             if let Err(err) = sender.send(event) {
                 panic!("{err}")
             }
+        }
+    }
+
+    pub fn current_view(&self) -> &View {
+        self.navigation.last().unwrap_or(&DEFAULT_VIEW)
+    }
+
+    pub fn mut_current_view(&mut self) -> &mut View {
+        self.navigation.last_mut().unwrap()
+    }
+
+    pub fn set_current_view(&mut self, active: Option<Active>, hovered: Option<Active>) {
+        let current = self.mut_current_view();
+
+        if let Some(active) = active {
+            current.active = active;
+        }
+
+        if let Some(hovered) = hovered {
+            current.hovered = hovered;
         }
     }
 

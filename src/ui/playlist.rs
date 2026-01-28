@@ -22,7 +22,7 @@ pub fn draw_playlist_sidebar(frame: &mut Frame, state: &State, palette: &Palette
         None => vec![],
     };
 
-    let highlight = Highlight::new(true, true);
+    let highlight = Highlight::new(false, false);
 
     draw_selectable(
         frame,
