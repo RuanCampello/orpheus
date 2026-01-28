@@ -1,14 +1,13 @@
 //! UI components to be rendered from [state](crate::state::State).
 
-use std::{thread::sleep, time::Duration};
+mod playlist;
 
-use crate::{config::Palette, state::State};
+use crate::{config::Palette, state::State, ui::playlist::draw_playlist_sidebar};
 use ratatui::{
     Frame,
-    layout::{Alignment, Constraint, HorizontalAlignment, Layout, Rect},
+    layout::{Alignment, Constraint, Layout, Rect},
     style::Style,
-    text::{self, Span},
-    widgets::{Block, BorderType, List, ListItem, Padding, Paragraph},
+    widgets::{Block, Paragraph},
 };
 
 #[inline(always)]
@@ -57,26 +56,6 @@ pub(crate) fn draw(frame: &mut Frame, state: &State) {
 
     draw_search(frame, state, &palette, header);
     draw_playlist_sidebar(frame, state, &palette, playlist);
-}
-
-fn draw_playlist_sidebar(frame: &mut Frame, state: &State, palette: &Palette, area: Rect) {
-    let block = Block::bordered()
-        .border_type(BorderType::Plain)
-        .padding(Padding::horizontal(1))
-        .title_alignment(HorizontalAlignment::Center)
-        .title(pad("Playlists", 1))
-        .border_style(Style::new().fg(palette.muted));
-
-    if let Some(playlists) = &state.playlists {
-        let items = playlists
-            .items
-            .iter()
-            .map(|playlist| ListItem::new(vec![text::Line::from(Span::raw(&playlist.name))]))
-            .collect::<Vec<_>>();
-
-        let playlists = List::new(items).block(block);
-        frame.render_widget(playlists, area);
-    }
 }
 
 fn draw_search(frame: &mut Frame, state: &State, palette: &Palette, area: Rect) {
