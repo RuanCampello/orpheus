@@ -7,21 +7,24 @@
 //! inputted by the user so that we can build the UI retaining data as possible
 //! and non-blocking.
 
-use std::sync::mpsc::Sender;
-
-use rspotify::model::{Page, SimplifiedPlaylist};
-
 use crate::{config::Config, io::Event};
+use rspotify::model::{CurrentPlaybackContext, Page, PlayableItem, SimplifiedPlaylist};
+use std::{sync::mpsc::Sender, time::Instant};
 
 /// All state that the application holds
 /// in order to render the UI.
-#[derive(Default)]
 pub(crate) struct State {
     pub config: Config,
 
     sender: Option<Sender<Event>>,
 
     pub playlists: Option<Page<SimplifiedPlaylist>>,
+
+    pub current_playback_context: Option<CurrentPlaybackContext>,
+    last_playback_pool: Instant,
+    is_fetching_playback: bool,
+
+    seek_ms: Option<u128>,
 }
 
 impl State {
@@ -29,7 +32,11 @@ impl State {
         Self {
             config,
             sender: Some(sender),
-            ..Default::default()
+            playlists: None,
+            last_playback_pool: Instant::now(),
+            current_playback_context: None,
+            seek_ms: None,
+            is_fetching_playback: false,
         }
     }
 
@@ -38,6 +45,43 @@ impl State {
             if let Err(err) = sender.send(event) {
                 panic!("{err}")
             }
+        }
+    }
+
+    pub fn update_tick(&mut self) {
+        todo!()
+    }
+
+    fn poll_playback(&mut self) {
+        const POOL_INTERVAL: u128 = 5_000;
+
+        let elapsed = self.last_playback_pool.elapsed().as_millis();
+        if !self.is_fetching_playback && elapsed >= POOL_INTERVAL {
+            match self.seek_ms {
+                Some(seek) => todo!(),
+                _ => self.dispatch(Event::GetCurrentPlayback),
+            }
+        }
+    }
+
+    fn seek(&mut self, ms: u32) {
+        if let Some(CurrentPlaybackContext {
+            item: Some(item), ..
+        }) = &self.current_playback_context
+        {
+            let duration = match item {
+                PlayableItem::Track(track) => track.duration,
+                PlayableItem::Episode(episode) => episode.duration,
+                _ => Default::default(),
+            }
+            .num_milliseconds() as u32;
+
+            let event = match ms < duration {
+                true => Event::Seek(ms),
+                _ => Event::NextTrack,
+            };
+
+            self.dispatch(event);
         }
     }
 }

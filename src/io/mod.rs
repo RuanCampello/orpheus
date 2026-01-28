@@ -3,7 +3,11 @@
 pub(crate) mod key;
 
 use crate::state::State;
-use rspotify::{AuthCodePkceSpotify as Spotify, prelude::OAuthClient};
+use rspotify::{
+    AuthCodePkceSpotify as Spotify,
+    model::{AdditionalType, PlayableItem},
+    prelude::OAuthClient,
+};
 use std::sync::Arc;
 use tokio::sync::Mutex;
 
@@ -17,6 +21,11 @@ pub(crate) struct Io<'io> {
 pub(crate) enum Event {
     /// Get the current logged user's playlists.
     UserPlaylists,
+    /// Get the current playback state.
+    GetCurrentPlayback,
+
+    Seek(u32),
+    NextTrack,
 }
 
 impl<'io> Io<'io> {
@@ -27,6 +36,9 @@ impl<'io> Io<'io> {
     pub async fn handle_event(&mut self, event: Event) {
         match event {
             Event::UserPlaylists => self.current_user_playlists().await,
+            Event::GetCurrentPlayback => self.current_playback().await,
+            Event::Seek(_) => todo!(),
+            Event::NextTrack => todo!(),
         }
     }
 
@@ -44,5 +56,36 @@ impl<'io> Io<'io> {
             }
             _ => unreachable!(),
         }
+    }
+
+    async fn current_playback(&mut self) {
+        let context = self
+            .spotify
+            .current_playback(
+                None,
+                Some(vec![&AdditionalType::Episode, &AdditionalType::Track]),
+            )
+            .await;
+
+        match context {
+            Ok(Some(context)) => {
+                let mut state = self.state.lock().await;
+                state.current_playback_context = Some(context.clone());
+
+                match context.item {
+                    Some(PlayableItem::Track(_)) => {}
+                    Some(PlayableItem::Episode(_)) => {}
+                    _ => {}
+                }
+            }
+
+            Ok(None) => {}
+
+            Err(_) => unreachable!(),
+        }
+    }
+
+    async fn seek(&mut self, ms: u32) {
+        todo!()
     }
 }
