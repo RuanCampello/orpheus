@@ -353,6 +353,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5729f5117e208430e437df2f4843f5e5952997175992d1414f94c57d61e270b4"
 
 [[package]]
+name = "demoji"
+version = "0.0.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "751460fd45c92e82e22a36f9ab5af571ec5a9e7032aee999a8e9d0e5e23b7077"
+dependencies = [
+ "regex",
+]
+
+[[package]]
 name = "deranged"
 version = "0.5.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1347,6 +1356,7 @@ dependencies = [
 name = "orpheus"
 version = "0.1.0"
 dependencies = [
+ "demoji",
  "directories",
  "ratatui",
  "rspotify",

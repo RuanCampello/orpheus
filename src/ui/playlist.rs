@@ -12,11 +12,13 @@ use ratatui::{
 };
 
 pub fn draw_playlist_sidebar(frame: &mut Frame, state: &State, palette: &Palette, area: Rect) {
+    use demoji::demoji;
+
     let items = match &state.playlists {
         Some(playlist) => playlist
             .items
             .iter()
-            .map(|item| item.name.clone())
+            .map(|item| demoji(&item.name))
             .collect(),
         None => vec![],
     };
