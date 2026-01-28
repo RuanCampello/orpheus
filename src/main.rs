@@ -1,4 +1,6 @@
 mod auth;
+mod config;
+
 use rspotify::prelude::OAuthClient;
 
 #[tokio::main]

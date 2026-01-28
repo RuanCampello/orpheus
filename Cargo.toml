@@ -5,6 +5,7 @@ edition = "2024"
 
 [dependencies]
 rspotify = { version = "0.15.3", features = ["cli"] }
+ratatui = { version = "0.30.0", features = ["crossterm"] }
 tokio = { version = "1.49.0", features = ["full"] }
 directories = "6.0"
 thiserror = "2.0.17"

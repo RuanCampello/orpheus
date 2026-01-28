@@ -7,15 +7,14 @@
 
 #![allow(unused)]
 
-use std::io::{self, Write};
-use std::path::PathBuf;
-
 use directories::ProjectDirs;
 use rspotify::{
     AuthCodePkceSpotify, Config, Credentials, OAuth,
     prelude::{BaseClient, OAuthClient},
     scopes,
 };
+use std::io::{self, Write};
+use std::path::PathBuf;
 use thiserror::Error;
 
 const SCOPES: [&str; 14] = [
