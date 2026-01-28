@@ -17,7 +17,7 @@ use ratatui::{
     layout::{Alignment, Constraint, Layout, Rect},
     style::Style,
     text::{Line, Span, Text},
-    widgets::{Block, Paragraph},
+    widgets::{Block, Padding, Paragraph},
 };
 
 pub struct Highlight {
@@ -51,7 +51,7 @@ pub(crate) fn draw(frame: &mut Frame, state: &State) {
     .areas(frame.area());
 
     let [sidebar, main, player] = Layout::horizontal([
-        Constraint::Percentage(20),
+        Constraint::Length(20),
         Constraint::Min(0),
         Constraint::Length(0),
     ])
@@ -82,24 +82,25 @@ fn draw_library(frame: &mut Frame, state: &State, palette: &Palette, area: Rect)
 
     let block = Block::bordered()
         .title(pad("Pages", 1))
-        .style(highlight.get(&palette));
+        .style(highlight.get(&palette))
+        .padding(Padding::left(1));
 
     let mut lines = vec![];
 
     // TODO: state and view for each line
     lines.push(Line::from(Span::styled(
-        Icon::new(IconKind::Home).to_string(),
+        format!("{} Home", Icon::new(IconKind::Home)),
         highlight.get(&palette),
     )));
 
     lines.push(Line::from(vec![Span::styled(
-        Icon::new(IconKind::Library).to_string(),
+        format!("{} Library", Icon::new(IconKind::Library)),
         highlight.get(&palette),
     )]));
 
     let paragraph = Paragraph::new(Text::from(lines))
         .block(block)
-        .alignment(Alignment::Center);
+        .alignment(Alignment::Left);
 
     frame.render_widget(paragraph, area);
 }
