@@ -105,8 +105,10 @@ fn handler(key: Key, state: &mut State) {
   }
 }
 
+// TODO: refactor this out (create a direction enum maybe)
+
 #[inline(always)]
-pub fn select_handler<I>(data: &[I], index: Option<usize>) -> usize {
+pub fn down_select_handler<I>(data: &[I], index: Option<usize>) -> usize {
   match index {
     Some(index) if !data.is_empty() => {
       let next = index + 1;
@@ -116,6 +118,17 @@ pub fn select_handler<I>(data: &[I], index: Option<usize>) -> usize {
         _ => next,
       }
     }
+    _ => 0,
+  }
+}
+
+#[inline(always)]
+pub fn up_select_handler<I>(data: &[I], index: Option<usize>) -> usize {
+  match index {
+    Some(index) if !data.is_empty() => match index > 0 {
+      true => index - 1,
+      _ => data.len() - 1,
+    },
     _ => 0,
   }
 }

@@ -16,7 +16,6 @@ use std::sync::{
 };
 use thiserror::Error;
 use tokio::sync::Mutex;
-use tracing::info;
 use tracing_subscriber;
 
 #[derive(Debug, Error)]
