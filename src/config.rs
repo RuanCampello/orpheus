@@ -1,10 +1,14 @@
 //! User configuration.
 
+use std::time::Duration;
+
 use ratatui::style::Color as Colour;
 
 #[derive(Debug)]
 pub struct Config {
-    theme: Theme,
+    pub theme: Theme,
+    /// Duration in milliseconds between tick events.
+    pub tick_rate: Duration,
 }
 
 #[derive(Debug, Default)]
@@ -22,6 +26,15 @@ pub struct Palette {
     subtext: Colour,
 }
 
+impl Default for Config {
+    fn default() -> Self {
+        Self {
+            tick_rate: Duration::from_millis(250),
+            theme: Default::default(),
+        }
+    }
+}
+
 impl From<Theme> for Palette {
     fn from(theme: Theme) -> Self {
         match theme {
@@ -36,6 +49,6 @@ impl From<Theme> for Palette {
 
 impl Default for Palette {
     fn default() -> Self {
-        todo!()
+        Self::from(Theme::Catppuccin)
     }
 }

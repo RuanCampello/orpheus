@@ -1,7 +1,19 @@
 mod auth;
 mod config;
+mod io;
+mod state;
+mod terminal;
 
-use rspotify::prelude::OAuthClient;
+use crate::{
+    config::Config,
+    io::{Event, Io},
+    state::State,
+};
+use std::sync::{
+    Arc,
+    mpsc::{Receiver, channel},
+};
+use tokio::sync::Mutex;
 
 #[tokio::main]
 async fn main() {
@@ -13,14 +25,23 @@ async fn main() {
         }
     };
 
-    match spotify.current_user().await {
-        Ok(user) => println!(
-            "{}",
-            user.display_name.unwrap_or_else(|| user.id.to_string())
-        ),
-        Err(e) => {
-            eprintln!("Failed to fetch user profile: {}", e);
-            std::process::exit(1);
-        }
+    let (sender, receiver) = channel::<Event>();
+
+    let config = Config::default();
+    let state = Arc::new(Mutex::new(State::new(config, sender)));
+    let outer_state = state.clone();
+
+    std::thread::spawn(move || {
+        let mut io = Io::new(spotify, &state);
+        start_tokio(receiver, &mut io);
+    });
+
+    terminal::start(&outer_state).await.unwrap();
+}
+
+#[tokio::main]
+async fn start_tokio<'io>(receiver: Receiver<Event>, io: &mut Io) {
+    while let Ok(event) = receiver.recv() {
+        io.handle_event(event).await
     }
 }
